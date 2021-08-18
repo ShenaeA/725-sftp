@@ -49,12 +49,11 @@ public class ServerThreadInstance extends Thread{
 			bInFromClient = new DataOutputStream(new BufferedOutputStream(socket.getInputStream()));
 			aInFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			aOutToClient = new DataOutputStream(socket.getOutputStream());
-			
 			sendToClient(posGreeting);
 		}
 		catch (Exception e){
-			sendToClient(negGreeting);
-			System.out.println("Connection not made.");
+			System.out.println("Something went wrong. Connection not made.");
+			sendToClient(negGreeting); 
 		}
 		
 		while(active){
@@ -71,7 +70,7 @@ public class ServerThreadInstance extends Thread{
 				}
 			} catch (Exception e){}
 		}
-		if (Server.DEBUG System.out.println("Closed thread");		
+		System.out.println("Closed thread");		
 	}
 	
 	// state takes the input cmd and decides which is the correct function
@@ -79,15 +78,15 @@ public class ServerThreadInstance extends Thread{
 	public void state(String[] command) throws Exception { 
 		switch (command[0]){
 			case "USER":
-			
+				sendToClient(authoriser.user(command[1]));
 			break;
 			
 			case "ACCT":
-			
+				sendToClient(authoriser.acct(command[1]));
 			break;
 	
 			case "PASS":
-			
+				sendToClient(authoriser.pass(command[1]);
 			break;
 			
 			case "TYPE":
@@ -148,14 +147,14 @@ public class ServerThreadInstance extends Thread{
 					break;
 				}
 				catch (IOException f) {
-					if(Server.DEBUG) System.out.println("Socket could not be closed");
+					System.out.println("Socket could not be closed");
 				}
 			}
 			if((char) c == '\0' && command.length() > 0) break; // if null, stop reading
 			if((char) c != '\0') command += (char) c; // otherwise add to string
 		}
 		
-		if (Server.DEBUG) System.out.println("Input: " + command);
+		// System.out.println("Input: " + command);
 		return command;
 	}
 		
