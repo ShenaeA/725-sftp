@@ -59,7 +59,6 @@ public class Authoriser {
 		validAcct = false;
 		validPass = false;
 		
-		
 		// IN: reads in file containing authorised users 
 		try{
 			reader = new BufferedReader(new FileReader(f));
@@ -75,7 +74,7 @@ public class Authoriser {
 					String temp = txt;
 					String[] userInfo = temp.split("#", -1);
 					user = userInfo[0];
-					accts = userInfo[1].split(",", -1);
+					accts = userInfo[1].split(",");
 					pass = userInfo[2];
 					
 					// if the input user if found in the file then break searching loop
@@ -118,7 +117,7 @@ public class Authoriser {
 			}
 			
 			//response
-			if(validAcct && validAcct){ // when neither password or account is required
+			if(validAcct && validPass){ // when neither password or account is required
 				response = "!"+user+" logged in";
 			}
 			else if(!validAcct && !validPass){ // if an account, password, or both are required
@@ -127,7 +126,7 @@ public class Authoriser {
 			else if(!validAcct && validPass){
 				response = "+"+user+" valid, send account";
 			}
-			else if(validAcct && !validpass){
+			else if(validAcct && !validPass){
 				response = "+"+user+" valid, send password";
 			}
 		}
@@ -136,12 +135,12 @@ public class Authoriser {
 	
 	/* 
 	 * ACCT CMD
-	 * assumes a valid user command must occur previous 
+	 * assumes a current valid user command active in remote system 
 	 */
 	public String acct(String inString) throws Exception {
 		String response = null;
 		if(!validUser){
-			response = "Cannot validate account as no USER given";
+			response = "-Cannot validate account as no USER given";
 		}
 		else{
 			// if there's no account required for the user
@@ -172,11 +171,38 @@ public class Authoriser {
 		return response;
 	}
 	
-	
+	/* 
+	 * PASS CMD
+	 * assumes a current valid user command active in remote system 
+	 */
 	public String pass(String inString) throws Exception {
-		
-		
-		
+		String response = null;
+		if(!validUser){
+			response = "-Cannot validate password as no USER given";
+		}
+		else{
+			if(!validAcct && validPass){
+				response = "+"+"Password not required, send account";
+			}
+			else if(validAcct && validPass){
+				response = "! Already logged in";
+			}
+			else{
+				if(inString == pass){
+					validPass = true;
+					if(validAcct){
+						response = "! Logged in";
+					}
+					else {
+						response = "+Send Account";
+					}
+				}
+				else {
+					response = "-Wrong password, try again";
+				}
+			}
+		}
+		return response;
 	}
-	
+
 }
