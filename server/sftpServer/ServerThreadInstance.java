@@ -1,5 +1,5 @@
-import java.io*;
-import java.net*;
+import java.io.*;
+import java.net.Socket;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.util.*;
@@ -36,9 +36,9 @@ public class ServerThreadInstance extends Thread{
 	
 	long netIO = 0;		// IO transferred counter
 	
-	ServerInstance(Socket s, String authFile){
+	ServerThreadInstance(Socket s, String authFile){
 		this.socket = s;
-		ServerInstance.authoriser = new Authoriser(authFile);
+		ServerThreadInstance.authoriser = new Authoriser(authFile);
 	}
 	
 	@Override
@@ -46,7 +46,7 @@ public class ServerThreadInstance extends Thread{
 		try{
 			socket.setReuseAddress(true);
 			bOutToClient = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-			bInFromClient = new DataOutputStream(new BufferedOutputStream(socket.getInputStream()));
+			bInFromClient = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 			aInFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			aOutToClient = new DataOutputStream(socket.getOutputStream());
 			sendToClient(posGreeting);
@@ -86,7 +86,7 @@ public class ServerThreadInstance extends Thread{
 			break;
 	
 			case "PASS":
-				sendToClient(authoriser.pass(command[1]);
+				sendToClient(authoriser.pass(command[1]));
 			break;
 			
 			case "TYPE":
@@ -128,8 +128,11 @@ public class ServerThreadInstance extends Thread{
 			case "STOP":
 			
 			break;
+		}
 			
 	}
+
+	// TO DO: sendToClient();
 		
 	
 	private String commandFromClient(){
@@ -143,15 +146,15 @@ public class ServerThreadInstance extends Thread{
 			catch (IOException e){
 				try { // when server is closed, close thread
 					socket.close();
-					running = false;
+					active = false;
 					break;
 				}
 				catch (IOException f) {
 					System.out.println("Socket could not be closed");
 				}
 			}
-			if((char) c == '\0' && command.length() > 0) break; // if null, stop reading
-			if((char) c != '\0') command += (char) c; // otherwise add to string
+			if((char) character == '\0' && command.length() > 0) break; // if null, stop reading
+			if((char) character != '\0') command += (char) character; // otherwise add to string
 		}
 		
 		// System.out.println("Input: " + command);
