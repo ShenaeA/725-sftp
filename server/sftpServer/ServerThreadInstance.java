@@ -4,6 +4,8 @@ import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.util.*;
 
+import javax.imageio.IIOException;
+
 /*
  * ServerInstance 
  * A thread which handles a new socket connection
@@ -133,6 +135,18 @@ public class ServerThreadInstance extends Thread{
 	}
 
 	// TO DO: sendToClient();
+	private void sendToClient(String s){
+		try{
+			aOutToClient.writeBytes(s + '\0');
+		}
+		catch(IOException e){
+			try{ // Client has closed connection, so close socket
+				socket.close();
+				active = false;
+			}
+			catch (IOException f){}
+		}
+	}
 		
 	
 	private String commandFromClient(){
