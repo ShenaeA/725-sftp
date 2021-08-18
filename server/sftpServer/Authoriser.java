@@ -8,6 +8,7 @@ import java.io.*;
  
 /*
  * Valid syntax for user info in Authorisation.txt
+ * Note: case sensitive
  *
  * **** IMPORTANT ****
  * IF Authorisation.txt IS LEFT EMPTY, SYSTEM IS ASSUMED TO HAVE NO USERS, 
@@ -39,7 +40,7 @@ public class Authoriser {
 	protected static Boolean validPass = false;
 	
 	protected static String user;
-	protected static String acct = "";
+	protected static String acct;
 	protected static String[] accts;
 	protected static String pass;
 
@@ -120,17 +121,55 @@ public class Authoriser {
 			if(validAcct && validAcct){ // when neither password or account is required
 				response = "!"+user+" logged in";
 			}
-			else { // if an account, password, or both are required
+			else if(!validAcct && !validPass){ // if an account, password, or both are required
 				response = "+"+user+" valid, send account and password";
+			}
+			else if(!validAcct && validPass){
+				response = "+"+user+" valid, send account";
+			}
+			else if(validAcct && !validpass){
+				response = "+"+user+" valid, send password";
 			}
 		}
 		return response;
 	}
 	
+	/* 
+	 * ACCT CMD
+	 * assumes a valid user command must occur previous 
+	 */
 	public String acct(String inString) throws Exception {
-		
-		
-		
+		String response = null;
+		if(!validUser){
+			response = "Cannot validate account as no USER given";
+		}
+		else{
+			// if there's no account required for the user
+			if(validAcct && !validPass){
+				response = "+"+"Account not required, send password";
+			}
+			else if(validAcct && validPass){
+				response = "! Already logged in";
+			}
+			else{
+				for(String acctname: accts){
+					if(inString == acctname){
+						validAcct = true;
+						if(validPass){
+							response = "! Account valid, logged-in";
+						}
+						else {
+							response = "+Account valid, send password";
+						}
+						break;
+					}
+				}
+				if(!validAcct){
+					response = "-Invalid account, try again";
+				}				
+			}
+		}
+		return response;
 	}
 	
 	
