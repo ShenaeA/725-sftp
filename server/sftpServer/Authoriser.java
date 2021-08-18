@@ -1,3 +1,5 @@
+package sftpServer;
+
 import java.io.*;
 
 /*
@@ -47,8 +49,11 @@ public class Authoriser {
 	public Authoriser(String aFile){
 		Authoriser.aFile = aFile;
 	}
-	
-	
+
+	public boolean authorised(){
+		return validUser && validAcct && validPass;
+	}
+		
 	// USER cmd
 	public String user(String inString) throws Exception{
 		File f = new File("Authorisation.txt");
@@ -139,7 +144,10 @@ public class Authoriser {
 	 */
 	public String acct(String inString) throws Exception {
 		String response = null;
-		if(!validUser){
+		if(authorised()){
+			response = "-Already logged in";
+		}
+		else if(!validUser){
 			response = "-Cannot validate account as no USER given";
 		}
 		else{
@@ -177,7 +185,10 @@ public class Authoriser {
 	 */
 	public String pass(String inString) throws Exception {
 		String response = null;
-		if(!validUser){
+		if(authorised()){
+			response = "-Already logged in";
+		}
+		else if(!validUser){
 			response = "-Cannot validate password as no USER given";
 		}
 		else{
