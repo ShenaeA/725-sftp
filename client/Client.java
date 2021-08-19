@@ -89,12 +89,13 @@ public class Client {
     }
     
     /*
+     * ONLY FOR INITIAL AUTHENTICATION COMMANDS (USER, ACCT, PASS)
      * validate(command, String[command, argument])
      * Checks for whether the input from the client system is the correct format, i.e. <command> [<SPACE> <args>] <NULL>
      * If it is, then the command will be sent to the server as a consolidated string, otherwise and error is thrown
      */
     public static void validate(String cmd, String[] args){
-        if(args.length != 2){ // i.e. its should be <command> <arg> 
+        if(args.length != 2){ // i.e. its should be <command> [<SPACE> <args>] <NULL>
             String s = null;
             switch (activeCommand) {
                 case "USER":
