@@ -2,7 +2,6 @@
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
-import java.util.ArrayList;
 
 
 public class Client {
@@ -37,7 +36,7 @@ public class Client {
                 System.out.print("> ");
                 String[] command = readSystemInput();
                 if(command != null){
-                    executeClientCommand();
+                    executeClientCommand(command);
                 }
             }
         }
@@ -119,8 +118,24 @@ public class Client {
         }
     }
 
-    // TO DO: sendToServer()
-
+    /* 
+     * sendToServer(command)
+     * Sends command as ASCII to server
+     * Error occurs if the client has already closed its connection
+     */
+    public static void sendToServer(String command){
+        try{
+			aOutToServer.writeBytes(command + '\0');
+		}
+		catch(IOException e){
+			try{ // Client has already closed connection, so close socket
+				socket.close();
+				active = false;
+                System.out.println("Connection to server closed.");
+			}
+			catch (IOException f){}
+		}
+    }
 
     /*
 	 * responseFromServer()
