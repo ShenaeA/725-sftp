@@ -83,6 +83,15 @@ public class Client {
                 case "PASS":
                     validate("PASS",args);
                     break;
+                case "DONE":
+                    try{
+                        sendToServer("DONE");
+                        System.out.println(responseFromServer());
+                        socket.close();
+                    }
+                    catch (Exception e){
+                        System.out.println("ERROR: Either connection was already lost or was unable to close connection now");
+                    }
             }
         }
     }
