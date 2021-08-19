@@ -96,7 +96,9 @@ public class Client {
                 case "TYPE":
                     type(args);
                     break;
-                    
+                case "LIST":
+                    list(args);
+                    break;
             }
         }
     }
@@ -151,10 +153,121 @@ public class Client {
             System.out.println(response);
         }
         else{
-            System.out.println("ERROR: Invalid argument input. Arguments for type are: \"A\", \"B\", and \"C\".");
+            System.out.println("ERROR: Invalid argument input. Arguments for TYPE are: \"A\", \"B\", and \"C\".");
         }
     }
 
+    /*
+     * LIST CMD
+     * list(String[command, argument, possible other arguments])
+     * This function checks whether the input string is correct for command LIST
+     * Arguments can either be "F" OR "V", for formatted or verbose directory respectively
+     */
+    public static void list(String[] args){
+        if((args.length >= 2 && args[0].equals("LIST")) && (args[1].equals("F") || args[1].equals("V"))){ // i.e. must receive "LIST" command and specification, optionally a directory path
+            if(args.length == 2){ // no path given
+                sendToServer(args[0]+" "+args[1]);
+            }
+            else{ // directory given, if there was spaces in the directory path, previous processing would've split 
+                String dir = "";
+                for(int i = 2; i<args.length; i++){
+                    if(i == (args.length-1)){
+                        dir += args[i];
+                    }
+                    else{
+                        dir += args[i] + " ";
+                    }
+                }
+                sendToServer(args[0] + args[1] + dir); // LIST FORMAT DIRECTORY-PATH
+            }
+        }
+        else{
+            System.out.println("ERROR: Invalid argument input. Arguments for LIST are: \"F\", and \"V\".");
+        }
+    }
+
+
+    /*
+     * CDIR CMD
+     * cdir(String[command, argument, possible other arguments])
+     * This function checks whether the input string is correct for command CDIR
+     * It also fixes the path-directory input, by reconnecting it with spaces (as originally intended)
+     */
+    public static void cdir(String[] args){
+        if(args.length >= 2){ // i.e. CDIR directory path
+            String dir = "";
+            for(int i = 1; i < args.length; i++){
+                if(i == (args.length-1)){
+                    dir += args[i];
+                }
+                else{
+                    dir += args[i] + " ";
+                }
+            }
+            sendToServer(args[0] + dir);
+            System.out.println(responseFromServer());
+        }
+        else{
+            System.out.println("ERROR: Invalid argument input. 1 argument allowed (for a new directory)");
+        }
+    }
+
+    /*
+     * KILL CMD
+     * kill(String[command, argument, possible other arguments])
+     * This function checks whether the input string is correct for command KILL
+     * Similar to circumstances of the CDIR command, 
+     * the file-spec argument may have been previously split because of spaces in the file name
+     * The function rejoins the argument with spaces, as originally input
+     */
+    public static void kill(String[] args){
+        if(args.length >= 2){ // i.e. KILL file-spec, has a minimum of 2 arguments
+            String spec = "";
+            for(int i = 1; i < args.length; i++){
+                if(i == (args.length-1)){
+                    spec += args[i];
+                }
+                else{
+                    spec += args[i] + " ";
+                }
+            }
+            sendToServer(args[0] + spec);
+            System.out.println(responseFromServer());
+        }
+        else{
+            System.out.println("ERROR: Invalid argument input. 1 argument allowed (for file spec)");
+        }
+    }
+
+    /*
+     * NAME CMD
+     * name(String[command, argument, possible other arguments])
+     * This function checks whether the input string is correct for command NAME
+     * Similar to circumstances of the KILL command, the old-file-spec argument may have been previously split 
+     * because of spaces in the file name. The function rejoins the argument with spaces, as originally input
+     */
+    public static void name(String[] args){
+        if(args.length >= 2){ // i.e. NAME old-file-spec, has a minimum of 2 arguments
+            String spec = "";
+            for(int i = 1; i < args.length; i++){
+                if(i == (args.length-1)){
+                    spec += args[i];
+                }
+                else{
+                    spec += args[i] + " ";
+                }
+            }
+            sendToServer(args[0] + spec);
+            System.out.println(responseFromServer());
+        }
+        else{
+            System.out.println("ERROR: Invalid argument input. 1 argument allowed (for old file spec)");
+        }
+    }
+
+    // TO DO: RETR
+
+    // TO DO: STOR
 
     /* 
      * sendToServer(command)
@@ -179,6 +292,7 @@ public class Client {
 	 * responseFromServer()
 	 * Reads response string sent from server in ASCII format character by character
 	 * Returns a string of completed response 
+     * Essentially, callin this function causes the client to busy wait until it gets a response from the server
 	 */	
     public static String responseFromServer(){
         String response = "";
