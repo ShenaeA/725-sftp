@@ -11,6 +11,7 @@ public class Client {
     static Socket socket;
     static boolean active = true;
     static String activeCommand;
+    static String sendType = "b";
 
     static DataOutputStream aOutToServer;
     static BufferedReader aInFromServer;
@@ -92,6 +93,10 @@ public class Client {
                     catch (Exception e){
                         System.out.println("ERROR: Either connection was already lost or was unable to close connection now");
                     }
+                case "TYPE":
+                    type(args);
+                    break;
+                    
             }
         }
     }
@@ -127,6 +132,30 @@ public class Client {
         }
     }
 
+    /*
+     * TYPE CMD
+     * type(String[command, argument])
+     * This function checks whether the input string is correct for command TYPE
+     * Arguments can either be "A", "B", or "C", representing, ASCII, binary and continuous respectively.
+     * Type selected dictates how the transferred file will be mapped when stored.
+     * Binary is the default type
+     */
+    public static void type(String[] args){
+        if(args.length == 2 && args[0].equals("TYPE")){ // i.e. received both command and argument
+            sendToServer(args[0]+" "+args[1].toLowerCase()); // TYPE + <A/B/C>
+            String response = responseFromServer();
+
+            if(response.substring(0, 1).equals("+")){
+                sendType = args[1].toLowerCase();
+            }
+            System.out.println(response);
+        }
+        else{
+            System.out.println("ERROR: Invalid argument input. Arguments for type are: \"A\", \"B\", and \"C\".");
+        }
+    }
+
+
     /* 
      * sendToServer(command)
      * Sends command as ASCII to server
@@ -137,10 +166,10 @@ public class Client {
 			aOutToServer.writeBytes(command + '\0');
 		}
 		catch(IOException e){
-			try{ // Client has already closed connection, so close socket
+			try{ // Connection is already closed, so close socket
 				socket.close();
 				active = false;
-                System.out.println("Connection to server closed.");
+                System.out.println("ERROR: Cannot send command. Connection to server closed.");
 			}
 			catch (IOException f){}
 		}

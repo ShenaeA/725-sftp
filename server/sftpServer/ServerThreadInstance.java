@@ -30,6 +30,7 @@ public class ServerThreadInstance extends Thread{
 	boolean name = false;
 	boolean retr = false;
 	
+	String sendType = "b"; // Default send type is binary
 	String storType = ""; 	// Store type (NEW | OLD | APP)
 	long fileLength;		// Length of file to store
 	
@@ -93,7 +94,7 @@ public class ServerThreadInstance extends Thread{
 			
 			case "TYPE":
 				if(authoriser.loggedIn()){
-					type(command[1]);
+					sendToClient(type(command[1]));
 				}
 				else{
 					sendToClient("-Command not available, please log in first.");
@@ -156,6 +157,39 @@ public class ServerThreadInstance extends Thread{
 		}
 			
 	}
+
+	/*
+	 * TYPE CMD
+	 * There are three methods of sending, ASCII, BINARY, and CONTINUOUS (a, b, c).
+	 * If an invalid type is given, the current type will remain the same.
+	 */
+	public String type(String inStr){
+		String response = null;
+		if(inStr != null){
+			switch(inStr.toLowerCase()){
+				case "a":
+					sendType = "a";
+					response = "+Using Ascii mode";
+					break;
+				case "b":
+					sendType = "b";
+					response = "+Using Binary mode";
+					break;
+				case "c":
+					sendType = "c";
+					response = "+Using Continuous mode";
+					break;
+				default:
+					response = "-Type not valid";
+					break;
+			}
+		}
+		else {
+			response = "-Type not valid";
+		}
+		return response;
+	}
+
 
 	/* 
      * sendToClient (command)
