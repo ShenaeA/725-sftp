@@ -48,10 +48,6 @@ public class Authoriser {
 	public Authoriser(String aFile){
 		Authoriser.aFile = aFile;
 	}
-
-	public boolean authorised(){
-		return validUser && validAcct && validPass;
-	}
 		
 	// USER cmd
 	public String user(String inString) throws Exception{
@@ -143,7 +139,7 @@ public class Authoriser {
 	 */
 	public String acct(String inString) throws Exception {
 		String response = null;
-		if(authorised()){
+		if(loggedIn()){
 			response = "-Already logged in";
 		}
 		else if(!validUser){
@@ -184,7 +180,7 @@ public class Authoriser {
 	 */
 	public String pass(String inString) throws Exception {
 		String response = null;
-		if(authorised()){
+		if(loggedIn()){
 			response = "-Already logged in";
 		}
 		else if(!validUser){
@@ -214,5 +210,9 @@ public class Authoriser {
 		}
 		return response;
 	}
-
+	
+	// Helper function intended for Authoriser and ServerInstance
+	public boolean loggedIn(){
+		return validUser && validAcct && validPass;
+	}
 }
