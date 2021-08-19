@@ -91,45 +91,68 @@ public class ServerThreadInstance extends Thread{
 				sendToClient(authoriser.pass(command[1]));
 			break;
 			
-			// case "TYPE":
+			case "TYPE":
+				if(authoriser.loggedIn()){
+					type(command[1]);
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 			
-			// break;
+			case "LIST":
+				if(authoriser.loggedIn()){
+					list(command[1]);
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 			
-			// case "LIST":
+			case "CDIR":
+				if(authoriser.loggedIn()){
+					cdir(command[1]);
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 			
-			// break;
+			case "KILL":
+				if(authoriser.loggedIn()){
+					kill(command[1]);
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 			
-			// case "CDIR":
+			case "NAME":
+				if(authoriser.loggedIn()){
+					name(command[1]);
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 			
-			// break;
+			case "RETR":
+				if(authoriser.loggedIn()){
+					retr(command[1]);
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 			
-			// case "KILL":
-			
-			// break;
-			
-			// case "NAME":
-			
-			// break;
-			
-			// case "RETR":
-			
-			// break;
-			
-			// case "STOR":
-			
-			// break;
-			
-			// case "TOBE":
-			
-			// break;
-			
-			// case "SEND":
-			
-			// break;
-			
-			// case "STOP":
-			
-			// break;
+			case "STOR":
+				if(authoriser.loggedIn()){
+					stor(command[1]);
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 		}
 			
 	}
