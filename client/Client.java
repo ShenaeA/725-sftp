@@ -6,6 +6,7 @@ import java.net.Socket;
 
 public class Client {
     static String[] validCommands;
+    static File ft;
     static String HOSTNAME = "localhost";
     static int PORT_NUMBER = 9999;
     static Socket socket;
@@ -19,7 +20,8 @@ public class Client {
     static DataInputStream bInFromServer;
 
     public static void main(String[] args) throws Exception {
-        new File(System.getProperty("user.dir")+"\\ft").mkdir(); // creats file transfer (ft) folder if doesn't already exist
+        ft = new File(System.getProperty("user.dir")+"\\ft");
+        ft.mkdir(); // creates file transfer (ft) folder if doesn't already exist
 
         validCommands = new String[]{"USER","ACCT","PASS","TYPE","LIST","CDIR","KILL","NAME","TOBE","DONE","RETR","SEND","STOP","STOR"};
         
@@ -98,6 +100,15 @@ public class Client {
                     break;
                 case "LIST":
                     list(args);
+                    break;
+                case "CDIR":
+                    cdir(args);
+                    break;
+                case "KILL":
+                    kill(args);
+                    break;
+                case "NAME":
+                    name(args);
                     break;
             }
         }
@@ -208,7 +219,7 @@ public class Client {
             System.out.println(responseFromServer());
         }
         else{
-            System.out.println("ERROR: Invalid argument input. 1 argument allowed (for a new directory)");
+            System.out.println("ERROR: Invalid argument input. 1 argument allowed for a new directory");
         }
     }
 
@@ -235,7 +246,7 @@ public class Client {
             System.out.println(responseFromServer());
         }
         else{
-            System.out.println("ERROR: Invalid argument input. 1 argument allowed (for file spec)");
+            System.out.println("ERROR: Invalid argument input. 1 argument allowed for file spec");
         }
     }
 
@@ -261,13 +272,72 @@ public class Client {
             System.out.println(responseFromServer());
         }
         else{
-            System.out.println("ERROR: Invalid argument input. 1 argument allowed (for old file spec)");
+            System.out.println("ERROR: Invalid argument input. 1 argument allowed for old file spec");
         }
     }
 
     // TO DO: RETR
 
     // TO DO: STOR
+    public static void stor(String[] args){
+        String spec = "";
+        if(args.length >= 3){ // i.e. STOR file-spec, has a minimum of 3 arguments
+            for(int i = 1; i < args.length; i++){
+                if(i == (args.length-1)){
+                    spec += args[i];
+                }
+                else{
+                    spec += args[i] + " ";
+                }
+            }
+
+            File f = new File(ft.getPath()+ "/" + spec); // location for file
+            if(!f.isFile()){ 
+                System.out.println("File " + spec + " does not exist in pathing: " + ft.getPath().toString());
+                return;
+            }
+
+            // // Compare sending type and existing file format
+            // if("a".equals(sendType)){
+            //     // if file not in ascii format
+            // }
+            // else if("b".equals(sendType) || "c".equals(sendType)){
+            //     //if file not in binary formatting
+            // }
+
+            sendToServer(args[0] + args[1] + spec);
+            String response = responseFromServer();
+            System.out.println(response);
+
+            if("+".equals(response.substring(0,1))){ 
+                // Begin SIZE cmd
+                System.out.println("File size sending: " + f.length() + " ... ");
+                sendToServer("SIZE " + f.length());
+                response = responseFromServer();
+                System.out.println(response);
+
+                if("+".equals(response.substring(0,1))){
+                    System.out.println("Sending...");
+
+                    try{
+                        if("a".equals(sendType)){
+                            //send ascii
+                        }
+                        else{
+                            // send binary or continuous
+                        }
+                    }
+
+                }
+            }
+
+        }
+        else{
+            System.out.println("ERROR: Invalid argument input. Must have 3 arguments, STOR { NEW | OLD | APP } file-spec");
+        }
+
+
+    }
 
     /* 
      * sendToServer(command)
