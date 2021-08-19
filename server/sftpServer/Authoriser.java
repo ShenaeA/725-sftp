@@ -32,7 +32,6 @@ import java.io.*;
  *
  * SCENARIO 4: user only needs a password, need two spaces for 'split' function
  * USERNAME##PASSWORD
- *
  */
  
 public class Authoriser {
@@ -160,7 +159,7 @@ public class Authoriser {
 			}
 			else{
 				for(String acctname: accts){
-					if(inString == acctname){
+					if(inString.equals(acctname)){
 						validAcct = true;
 						if(validPass){
 							response = "! Account valid, logged-in";
@@ -199,7 +198,7 @@ public class Authoriser {
 				response = "! Already logged in";
 			}
 			else{
-				if(inString == pass){
+				if(inString.equals(pass)){
 					validPass = true;
 					if(validAcct){
 						response = "! Logged in";

@@ -1,10 +1,7 @@
+package sftpServer;
+
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.*;
-import java.nio.file.attribute.*;
-import java.util.*;
-
-import javax.imageio.IIOException;
 
 /*
  * ServerInstance 
@@ -75,8 +72,11 @@ public class ServerThreadInstance extends Thread{
 		System.out.println("Closed thread");		
 	}
 	
-	// state takes the input cmd and decides which is the correct function
-	// possible args are: "USER", "ACCT", "PASS", "TYPE", "LIST", "CDIR', "KILL', "NAME", "DONE", "RETR", AND "STOR"
+	/*
+	 * state(command)
+	 * Takes the input cmd and decides which is the correct function
+	 * Possible args are: "USER", "ACCT", "PASS", "TYPE", "LIST", "CDIR', "KILL', "NAME", "DONE", "RETR", AND "STOR"
+	 */
 	public void state(String[] command) throws Exception { 
 		switch (command[0]){
 			case "USER":
@@ -91,50 +91,54 @@ public class ServerThreadInstance extends Thread{
 				sendToClient(authoriser.pass(command[1]));
 			break;
 			
-			case "TYPE":
+			// case "TYPE":
 			
-			break;
+			// break;
 			
-			case "LIST":
+			// case "LIST":
 			
-			break;
+			// break;
 			
-			case "CDIR":
+			// case "CDIR":
 			
-			break;
+			// break;
 			
-			case "KILL":
+			// case "KILL":
 			
-			break;
+			// break;
 			
-			case "NAME":
+			// case "NAME":
 			
-			break;
+			// break;
 			
-			case "RETR":
+			// case "RETR":
 			
-			break;
+			// break;
 			
-			case "STOR":
+			// case "STOR":
 			
-			break;
+			// break;
 			
-			case "TOBE":
+			// case "TOBE":
 			
-			break;
+			// break;
 			
-			case "SEND":
+			// case "SEND":
 			
-			break;
+			// break;
 			
-			case "STOP":
+			// case "STOP":
 			
-			break;
+			// break;
 		}
 			
 	}
 
-	// TO DO: sendToClient();
+	/* 
+     * sendToClient (command)
+     * Sends command as ASCII to server
+     * Error occurs if the client has already closed its connection
+     */
 	private void sendToClient(String s){
 		try{
 			aOutToClient.writeBytes(s + '\0');
@@ -148,7 +152,12 @@ public class ServerThreadInstance extends Thread{
 		}
 	}
 		
-	
+
+	/*
+	 * commandFromClient()
+	 * Reads command string sent from client in ASCII format character by character
+	 * Returns a string of completed command 
+	 */	
 	private String commandFromClient(){
 		String command = "";
 		int character = 0;
@@ -171,7 +180,7 @@ public class ServerThreadInstance extends Thread{
 			if((char) character != '\0') command += (char) character; // otherwise add to string
 		}
 		
-		// System.out.println("Input: " + command);
+		System.out.println("Input: " + command);
 		return command;
 	}
 		
