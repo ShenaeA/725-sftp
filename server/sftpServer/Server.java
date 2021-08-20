@@ -9,8 +9,9 @@ public class Server{
     private static int PORT_NUMBER = 9999;
     static boolean folderExists;
     static File ftFolder;
-
+    static boolean seeSysOutput = true;
     public static void main(String[] args) throws Exception {
+        
         if(args.length == 1){
             File f = new File(args[0]);
             if(f.exists()){
@@ -28,7 +29,8 @@ public class Server{
             return;
         }
 
-        ftFolder = new File(System.getProperty("user.dir")+"\\ft");
+        ftFolder = new File(System.getProperty("user.dir")+"\\sft");
+
         if(ftFolder.exists()){
             System.out.println("File transfer folder already exists");
         }

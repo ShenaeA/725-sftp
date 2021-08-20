@@ -1,7 +1,7 @@
-package sftpServer;
-
 import java.io.*;
 import java.net.Socket;
+import java.util.List;
+import java.util.stream.*;
 
 /*
  * ServerInstance 
@@ -33,8 +33,8 @@ public class ServerThreadInstance extends Thread{
 	String sendType = "b"; // Default send type is binary
 	String storType = ""; 	// Store type (NEW | OLD | APP)
 	long fileLength;		// Length of file to store
-	
-	long netIO = 0;		// IO transferred counter
+	private static final String workingDir = System.getProperty("user.dir")+"ft";
+	String activeDir = "";
 	
 	ServerThreadInstance(Socket s, String authFile){
 		this.socket = s;
@@ -52,15 +52,15 @@ public class ServerThreadInstance extends Thread{
 			sendToClient(posGreeting);
 		}
 		catch (Exception e){
-			System.out.println("Something went wrong. Connection not made.");
+			if(Server.seeSysOutput) System.out.println("Something went wrong. Connection not made.");
 			sendToClient(negGreeting); 
 		}
 		
 		while(active){
 			try {
 				String[] commandFromClient = commandFromClient().split(" ");
-				if(commandFromClient[0] == "DONE"){
-					sendToClient("+Closing connection. total transferred is " + netIO/1000 + "kBs.");
+				if("DONE".equals(commandFromClient[0])){
+					sendToClient("+Finishing command received. Closing connection...");
 					socket.close();
 					active = false;
 					break;
@@ -70,7 +70,7 @@ public class ServerThreadInstance extends Thread{
 				}
 			} catch (Exception e){}
 		}
-		System.out.println("Closed thread");		
+		if(Server.seeSysOutput) System.out.println("Closed thread");		
 	}
 	
 	/*
@@ -103,57 +103,57 @@ public class ServerThreadInstance extends Thread{
 			
 			case "LIST":
 				if(authoriser.loggedIn()){
-					list(command[1]);
+					sendToClient(list(command));
 				}
 				else{
 					sendToClient("-Command not available, please log in first.");
 				}
 				break;
 			
-			case "CDIR":
-				if(authoriser.loggedIn()){
-					cdir(command[1]);
-				}
-				else{
-					sendToClient("-Command not available, please log in first.");
-				}
-				break;
+			// case "CDIR":
+			// 	if(authoriser.loggedIn()){
+			// 		cdir(command[1]);
+			// 	}
+			// 	else{
+			// 		sendToClient("-Command not available, please log in first.");
+			// 	}
+			// 	break;
 			
-			case "KILL":
-				if(authoriser.loggedIn()){
-					kill(command[1]);
-				}
-				else{
-					sendToClient("-Command not available, please log in first.");
-				}
-				break;
+			// case "KILL":
+			// 	if(authoriser.loggedIn()){
+			// 		kill(command[1]);
+			// 	}
+			// 	else{
+			// 		sendToClient("-Command not available, please log in first.");
+			// 	}
+			// 	break;
 			
-			case "NAME":
-				if(authoriser.loggedIn()){
-					name(command[1]);
-				}
-				else{
-					sendToClient("-Command not available, please log in first.");
-				}
-				break;
+			// case "NAME":
+			// 	if(authoriser.loggedIn()){
+			// 		name(command[1]);
+			// 	}
+			// 	else{
+			// 		sendToClient("-Command not available, please log in first.");
+			// 	}
+			// 	break;
 			
-			case "RETR":
-				if(authoriser.loggedIn()){
-					retr(command[1]);
-				}
-				else{
-					sendToClient("-Command not available, please log in first.");
-				}
-				break;
+			// case "RETR":
+			// 	if(authoriser.loggedIn()){
+			// 		retr(command[1]);
+			// 	}
+			// 	else{
+			// 		sendToClient("-Command not available, please log in first.");
+			// 	}
+			// 	break;
 			
-			case "STOR":
-				if(authoriser.loggedIn()){
-					stor(command[1]);
-				}
-				else{
-					sendToClient("-Command not available, please log in first.");
-				}
-				break;
+			// case "STOR":
+			// 	if(authoriser.loggedIn()){
+			// 		stor(command[1]);
+			// 	}
+			// 	else{
+			// 		sendToClient("-Command not available, please log in first.");
+			// 	}
+			// 	break;
 		}
 			
 	}
@@ -189,6 +189,121 @@ public class ServerThreadInstance extends Thread{
 		}
 		return response;
 	}
+
+	/*
+	 * LIST CMD
+	 * There are three methods of sending, ASCII, BINARY, and CONTINUOUS (a, b, c).
+	 * If an invalid type is given, the current type will remain the same.
+	 */
+	public String list(String[] args){
+		String response = null;
+		// readding white space
+		String dir = "";
+		if(args.length > 3){
+			for(int i = 2; i < args.length; i++){
+                if(i == (args.length-1)){
+                    dir += args[i];
+                }
+                else{
+                    dir += args[i] + " ";
+                }
+            }
+		}
+		else{
+			if(args.length == 3){ // no white space path
+				dir = args[2];
+			}
+			else if(args.length == 2){
+				dir = "./";
+			}
+			else{
+				if(Server.seeSysOutput) System.out.println("Wrong args amount received. Got " + args.length);
+				return "-Wrong args ammount";
+			}
+			
+		}
+		if(!"./".equals(dir)){ // i.e. either want a directory path (e.g. Documents/ft/) or an empty string
+			if(!dir.substring(0,1).equals("/")){
+				dir = "/" + dir;
+			}
+		}
+		
+
+		if(args[1] != null){
+			switch(args[1]){
+				case "F":
+					List<String> inSetOfFiles = Stream.of(new File(dir).listFiles()).filter(file -> !file.isDirectory()).map(File::getName).collect(Collectors.toList());
+					String files = "";
+					for(String s : inSetOfFiles){
+						files += s + "\r\n";
+					}
+					response = "+" + dir + "\r\n" + files;
+					break;
+				case "V":
+					response = "V";
+					break;
+				default:
+					response = "-Type not valid";
+					break;
+			}
+		}
+		else {
+			response = "-Type not valid";
+		}
+		return response;
+	}
+
+
+	/*
+	 * STOR CMD (inc SIZE)
+	 * 
+	 * 
+	 */
+	private String stor(String[] args){
+		String response = null;
+		// refilling any white space in file-sped
+		String fileName = "";
+		if(args.length > 3){
+			for(int i = 2; i < args.length; i++){
+                if(i == (args.length-1)){
+                    fileName += args[i];
+                }
+                else{
+                    fileName += args[i] + " ";
+                }
+            }
+		}
+
+		if(args[1] != null){
+			switch(args[1]){
+				case "NEW":
+					File file = new File(fileName);
+					if(file.isFile()){
+						sendToClient("+File exists, will create new generation of file");
+					}
+					else{
+						sendToClient("+File does not exist, will create new file");
+					}
+
+					
+
+
+					break;
+
+				case "OLD":
+
+
+					break;
+
+				case "APP":
+
+
+					break;
+			}
+		}
+		return response;
+	}
+
 
 
 	/* 
@@ -230,14 +345,14 @@ public class ServerThreadInstance extends Thread{
 					break;
 				}
 				catch (IOException f) {
-					System.out.println("Socket could not be closed");
+					if(Server.seeSysOutput) System.out.println("Socket could not be closed");
 				}
 			}
 			if((char) character == '\0' && command.length() > 0) break; // if null, stop reading
 			if((char) character != '\0') command += (char) character; // otherwise add to string
 		}
 		
-		System.out.println("Input: " + command);
+		if(Server.seeSysOutput) System.out.println("Input: " + command);
 		return command;
 	}
 		
