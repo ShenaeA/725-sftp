@@ -1,5 +1,3 @@
-package sftpServer;
-
 import java.io.*;
 
 /*
