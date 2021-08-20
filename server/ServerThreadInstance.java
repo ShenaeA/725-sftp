@@ -33,8 +33,8 @@ public class ServerThreadInstance extends Thread{
 	String sendType = "b"; // Default send type is binary
 	String storType = ""; 	// Store type (NEW | OLD | APP)
 	long fileLength;		// Length of file to store
-	private static final String workingDir = System.getProperty("user.dir")+"ft";
-	String activeDir = "";
+	private static final String workingDir = System.getProperty("user.dir")+"\\sft";
+	String activeDir = workingDir;
 	
 	ServerThreadInstance(Socket s, String authFile){
 		this.socket = s;
@@ -198,46 +198,49 @@ public class ServerThreadInstance extends Thread{
 	public String list(String[] args){
 		String response = null;
 		// readding white space
-		String dir = "";
+		String dir = workingDir;
+		String printDir = "\\";
 		if(args.length > 3){
 			for(int i = 2; i < args.length; i++){
                 if(i == (args.length-1)){
-                    dir += args[i];
+                    printDir += args[i];
                 }
                 else{
-                    dir += args[i] + " ";
+                    printDir += args[i] + " ";
                 }
             }
 		}
 		else{
 			if(args.length == 3){ // no white space path
-				dir = args[2];
+				printDir += args[2];
 			}
-			else if(args.length == 2){
-				dir = "./";
-			}
-			else{
+			else if(args.length < 2) {
 				if(Server.seeSysOutput) System.out.println("Wrong args amount received. Got " + args.length);
 				return "-Wrong args ammount";
 			}
 			
 		}
-		if(!"./".equals(dir)){ // i.e. either want a directory path (e.g. Documents/ft/) or an empty string
-			if(!dir.substring(0,1).equals("/")){
-				dir = "/" + dir;
-			}
-		}
+		dir += printDir;
 		
-
 		if(args[1] != null){
 			switch(args[1]){
 				case "F":
-					List<String> inSetOfFiles = Stream.of(new File(dir).listFiles()).filter(file -> !file.isDirectory()).map(File::getName).collect(Collectors.toList());
-					String files = "";
-					for(String s : inSetOfFiles){
-						files += s + "\r\n";
+					try {
+						List<String> inSetOfFiles = Stream.of(new File(dir).listFiles()).map(File::getName).collect(Collectors.toList());
+						String files = "";
+						for(String s : inSetOfFiles){
+							files += s + "\r\n";
+						}
+						response = "+" + printDir + "\r\n" + files;
 					}
-					response = "+" + dir + "\r\n" + files;
+					catch (Exception e){
+						if (Server.seeSysOutput){
+							System.err.println(e);
+							activeDir = "";
+							return "-"+ e.toString(); // return error to client
+						}
+					}
+					
 					break;
 				case "V":
 					response = "V";
@@ -355,5 +358,4 @@ public class ServerThreadInstance extends Thread{
 		if(Server.seeSysOutput) System.out.println("Input: " + command);
 		return command;
 	}
-		
 }
