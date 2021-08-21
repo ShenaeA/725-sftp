@@ -190,7 +190,7 @@ public class Client {
                         dir += args[i] + " ";
                     }
                 }
-                sendToServer(args[0] + args[1] + dir); // LIST FORMAT DIRECTORY-PATH
+                sendToServer(args[0] + " " + args[1] + " " + dir); // LIST FORMAT DIRECTORY-PATH
             }
         }
         else{

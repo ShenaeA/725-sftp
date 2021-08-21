@@ -1,5 +1,11 @@
 import java.io.*;
 import java.net.Socket;
+import java.nio.file.DirectoryIteratorException;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.*;
 
@@ -221,17 +227,23 @@ public class ServerThreadInstance extends Thread{
 			
 		}
 		dir += printDir;
+
+		if(!(new File(dir).exists())){
+			return "-Invalid directory";
+		}
 		
 		if(args[1] != null){
 			switch(args[1]){
 				case "F":
 					try {
 						List<String> inSetOfFiles = Stream.of(new File(dir).listFiles()).map(File::getName).collect(Collectors.toList());
-						String files = "";
-						for(String s : inSetOfFiles){
-							files += s + "\r\n";
+						String files = "+" + printDir + "\r\n";
+						if(inSetOfFiles!= null){
+							for(String s : inSetOfFiles){
+								files += s + "\r\n";
+							}
 						}
-						response = "+" + printDir + "\r\n" + files;
+						response = files;
 					}
 					catch (Exception e){
 						if (Server.seeSysOutput){
@@ -243,7 +255,44 @@ public class ServerThreadInstance extends Thread{
 					
 					break;
 				case "V":
-					response = "V";
+					try {
+						StringBuilder build = new StringBuilder();
+						build.append("+").append(printDir).append("\r\n");
+						build.append(String.format("%-64s%-10s%-4s%-27s%-1s", "|Name", "|Size (kB)", "|R/W", "|Last Modified", "|")).append("\r\n");
+						
+						// Get file info
+						ArrayList<FileInfo> filesInfo = new ArrayList<FileInfo>();
+						File directory = new File(dir);
+						if(directory!=null){
+							for(File file : directory.listFiles()){
+								filesInfo.add(new FileInfo(file.getName(), 
+									DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.LONG).format(new Date(file.lastModified())),
+									file.length(),
+									file.canRead(),
+									file.canWrite()));
+																
+							}
+						}
+
+						// Format display
+						for(FileInfo f : filesInfo){
+							String temp = "";
+							temp += String.format("%-64s", "|"+ f.getName());
+							temp += String.format("%-10s", "|" + f.getSize()/1000);
+							temp += String.format("%-4s", "|" + f.getReadWrite());
+							temp += String.format("%-27s", "|" + f.getModified());
+							temp += String.format("%-1s", "|");
+							temp += "\r\n";
+							build.append(temp);
+						}
+
+						response = build.toString();
+
+					}
+					catch (DirectoryIteratorException | InvalidPathException f) {
+						if(Server.seeSysOutput) System.err.print(f);
+						response = "-" + f.toString();
+					}
 					break;
 				default:
 					response = "-Type not valid";
