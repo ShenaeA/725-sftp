@@ -217,7 +217,7 @@ public class Client {
                     dir += args[i] + " ";
                 }
             }
-            sendToServer(args[0] + dir);
+            sendToServer(args[0] + " " + dir);
             System.out.println(responseFromServer());
         }
         else{
@@ -244,7 +244,7 @@ public class Client {
                     spec += args[i] + " ";
                 }
             }
-            sendToServer(args[0] + spec);
+            sendToServer(args[0] + " " + spec);
             System.out.println(responseFromServer());
         }
         else{
@@ -270,7 +270,7 @@ public class Client {
                     spec += args[i] + " ";
                 }
             }
-            sendToServer(args[0] + spec);
+            sendToServer(args[0] + " " + spec);
             System.out.println(responseFromServer());
         }
         else{

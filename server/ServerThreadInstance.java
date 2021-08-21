@@ -3,6 +3,7 @@ import java.net.Socket;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
+import java.nio.file.NoSuchFileException;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -118,7 +119,7 @@ public class ServerThreadInstance extends Thread{
 			
 			// case "CDIR":
 			// 	if(authoriser.loggedIn()){
-			// 		cdir(command[1]);
+			// 		sendToClient(cdir(command[1]));
 			// 	}
 			// 	else{
 			// 		sendToClient("-Command not available, please log in first.");
@@ -127,7 +128,7 @@ public class ServerThreadInstance extends Thread{
 			
 			case "KILL":
 				if(authoriser.loggedIn()){
-					kill(command[1]);
+					sendToClient(kill(command));
 				}
 				else{
 					sendToClient("-Command not available, please log in first.");
@@ -136,7 +137,7 @@ public class ServerThreadInstance extends Thread{
 			
 			// case "NAME":
 			// 	if(authoriser.loggedIn()){
-			// 		name(command[1]);
+			// 		sendToClient(name(command[1]));
 			// 	}
 			// 	else{
 			// 		sendToClient("-Command not available, please log in first.");
@@ -145,7 +146,7 @@ public class ServerThreadInstance extends Thread{
 			
 			// case "RETR":
 			// 	if(authoriser.loggedIn()){
-			// 		retr(command[1]);
+			// 		sendToClient(retr(command[1]));
 			// 	}
 			// 	else{
 			// 		sendToClient("-Command not available, please log in first.");
@@ -154,7 +155,7 @@ public class ServerThreadInstance extends Thread{
 			
 			// case "STOR":
 			// 	if(authoriser.loggedIn()){
-			// 		stor(command[1]);
+			// 		sendToClient(stor(command[1]));
 			// 	}
 			// 	else{
 			// 		sendToClient("-Command not available, please log in first.");
@@ -228,7 +229,7 @@ public class ServerThreadInstance extends Thread{
 		}
 		dir += printDir;
 
-		if(!(new File(dir).exists())){
+		if(!(new File(dir).isDirectory())){
 			return "-Invalid directory";
 		}
 		
@@ -356,7 +357,43 @@ public class ServerThreadInstance extends Thread{
 		return response;
 	}
 
-	
+	/*
+	 * KILL CMD
+	 * Deletes <file-spec> file from server system
+	 * 
+	 */
+	private String kill(String[] args){
+		try{
+			String response = null;
+			String fileSpec = "";
+			if(args.length >= 2) {
+				fileSpec = whitespace(args, 2);
+			}
+			else{
+				return "-Wrong argument amount";
+			}
+
+			File delete = new File(workingDir + "\\" + fileSpec);
+			
+			if(!(delete.isFile())){
+				return "-Not deleted because file does not exist";
+			}
+
+			if(delete.delete()){
+				response = "+" + fileSpec + " deleted";
+			}
+			else{
+				response = "-Not deleted because: reason unknown";
+			}
+			return response;
+
+		}
+		catch (SecurityException e){
+			return "-Not deleted because a security exception occured: " + e.toString();
+		}
+		
+	}
+
 	/*
 	 * whitespace - helper function
 	 * Send/receive involves converting a string into a string array, splitting at every whitespace
