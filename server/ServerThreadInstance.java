@@ -125,14 +125,14 @@ public class ServerThreadInstance extends Thread{
 			// 	}
 			// 	break;
 			
-			// case "KILL":
-			// 	if(authoriser.loggedIn()){
-			// 		kill(command[1]);
-			// 	}
-			// 	else{
-			// 		sendToClient("-Command not available, please log in first.");
-			// 	}
-			// 	break;
+			case "KILL":
+				if(authoriser.loggedIn()){
+					kill(command[1]);
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 			
 			// case "NAME":
 			// 	if(authoriser.loggedIn()){
@@ -356,7 +356,29 @@ public class ServerThreadInstance extends Thread{
 		return response;
 	}
 
-
+	
+	/*
+	 * whitespace - helper function
+	 * Send/receive involves converting a string into a string array, splitting at every whitespace
+	 * This function combines the third argument back together as originally intended
+	 * e.g. Input string from client: LIST F directoryName/folder 1/ 
+	 * received as 4 arguments: [LIST, F, directoryName/folder, 1/] 
+	 * Converted back to 3 arguments: [LIST, F, directoryName/folder 1/]
+	 */
+	private String whitespace(String args[], int reqArgs){
+		String dir = "";
+		if(args.length >= reqArgs){
+			for(int i = reqArgs-1; i < args.length; i++){
+                if(i == (args.length-1)){
+                    dir += args[i];
+                }
+                else{
+                    dir += args[i] + " ";
+                }
+            }
+		}
+		return dir;
+	}
 
 	/* 
      * sendToClient (command)
