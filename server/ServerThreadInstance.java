@@ -43,7 +43,7 @@ public class ServerThreadInstance extends Thread{
 	private static File serverFolderFile = new File(System.getProperty("user.dir"));
 	private static final String rootDir = (serverFolderFile.getParentFile()).getAbsolutePath();
 	String activeDir = rootDir;
-	
+	 
 	ServerThreadInstance(Socket s, String authFile){
 		this.socket = s;
 		ServerThreadInstance.authoriser = new Authoriser(authFile);
@@ -90,20 +90,40 @@ public class ServerThreadInstance extends Thread{
 	public void state(String[] command) throws Exception { 
 		switch (command[0]){
 			case "USER":
-				sendToClient(authoriser.user(command[1]));
+				if(command.length != 2){
+					sendToClient("-ERROR: incorrect argument quantity. USER command only requires one argument <USER username>");
+				}
+				else {
+					sendToClient(authoriser.user(command[1]));
+				}
 			break;
 			
 			case "ACCT":
-				sendToClient(authoriser.acct(command[1]));
+				if(command.length != 2){
+					sendToClient("-ERROR: incorrect argument quantity. ACCT command only requires one argument <ACCT accountName>");
+				}
+				else {
+					sendToClient(authoriser.acct(command[1]));
+				}
 			break;
 	
 			case "PASS":
-				sendToClient(authoriser.pass(command[1]));
+				if(command.length != 2){
+					sendToClient("-ERROR: incorrect argument quantity. PASS command only requires one argument <PASS password>");
+				}
+				else {
+					sendToClient(authoriser.pass(command[1]));
+				}
 			break;
 			
 			case "TYPE":
 				if(authoriser.loggedIn()){
-					sendToClient(type(command[1]));
+					if(command.length != 2){
+						sendToClient("-ERROR: incorrect argument quantity. TYPE command only requires one argument <TYPE A|B|C>");
+					}
+					else {
+						sendToClient(type(command[1]));
+					}
 				}
 				else{
 					sendToClient("-Command not available, please log in first.");
@@ -121,7 +141,7 @@ public class ServerThreadInstance extends Thread{
 			
 			case "CDIR":
 				if(authoriser.loggedIn()){
-					//sendToClient(cdir(command));
+					sendToClient(cdir(command));
 				}
 				else{
 					sendToClient("-Command not available, please log in first.");
@@ -401,31 +421,70 @@ public class ServerThreadInstance extends Thread{
 	* 
 	* 
 	*/
-	// private String cdir(String[] args){
-	// 	String response = "";
-	// 	String dir = "";
-	// 	try{
-	// 		if(args.length >=2){
-	// 			dir = whitespace(args, 2);
-	// 		}
-	// 		else{
-	// 			return "-Wrong argument amount";
-	// 		}
-	// 		if(!"/".equals(dir.substring(0,1))){
-	// 			dir = "/" + dir;
-	// 		}
+	private String cdir(String[] args){
+		String response = "";
+		String dir = "";
+		try{
+			if(args.length >=2){
+				dir = whitespace(args, 2);
+			}
+			else{
+				return "-Wrong argument amount";
+			}
+			if(!"/".equals(dir.substring(0,1))){
+				dir = "/" + dir;
+			}
 
-	// 		File f = new File(activeDir + dir);
-	// 		if(!f.isDirectory()){
-	// 			return "-Can't connect to directory because: input is not a valid directory";
-	// 		}
+			File f = new File(rootDir + dir);
+			if(!f.isDirectory()){
+				return "-Can't connect to directory because: input is not a valid directory";
+			}
 
-	// 		int restr = restricted(dir);
-
-
-
-	// 	}
-	// }
+			//[0 = no restriction], [1 = restricted but required USER/ACCT/PW is currently active],
+	 		//[2 = restriction, need ACCT/PW of current user (i.e. need to change acounts)], 
+	 		//[3 = restricted, current user has no access], [4 = an error with the .restricted file], [5 = another error occurred]
+			switch(restricted(rootDir + dir)){
+				case 0:
+					activeDir = dir;
+					response = "!Changed working directory to " + dir;
+					break;
+				case 1:
+					activeDir = dir;
+					response = "!Changed working directory to " + dir;
+					break;
+				case 2:
+					sendToClient("+Directory ok, send account"); 
+					String[] responseFromClient = commandFromClient().split(" "); 
+					
+					while(!responseFromClient[0].equals("ACCT") || responseFromClient.length != 2){
+						sendToClient("-Incorrect input, please send account, <ACCT accountName>");
+						responseFromClient = commandFromClient().split(" "); 
+					}
+					if(authoriser.acctCDIR(responseFromClient[1])){ // account was changed
+						if(restricted(dir) == 1){
+							response = "!Changed working directory to " + dir;
+							break;
+						}
+					}
+					response = "-Account exists but does not have permissions to enter this directory. Account has been changed to " + Authoriser.account + " and current directory is " + ((new File(rootDir + activeDir)).getAbsolutePath());
+					break;
+				case 3:
+					response = "-Cannot connect to " + dir + " because: error occurred with restricted file";
+					break;
+				case 4:
+					response = "-Cannot connect to " + dir + " because: error occurred with restricted file";
+					break;
+				case 5:
+					response = "-Cannot connect to " + dir + " because: unknown error occurred";
+					break;
+			}
+			return response;
+		}
+		catch (Exception e){
+			activeDir = rootDir;
+			return "ERROR: unknown error occurred, current directory changed to root";
+		}
+	}
 
 
 	/*
@@ -457,6 +516,8 @@ public class ServerThreadInstance extends Thread{
 	 * containing requirements for a USER + ACCT/PW. This function checks the Authoriser to see if that ACCT/PW is currently in use
 	 * If not, a request for an ACCT/PW is made. 
 	 * 
+	 * This helper function assumes that if a valid user isn't logged in already, then the client doesn't have permission to enter the directory
+	 * 
 	 * File format must be the same as Authorisation.txt, having '#' between each field, and use ',' to separate ACCTs
 	 * e.g. USER#ACCT,ACCT2#PASSWORD or USER##PASSWORD or USER#ACCT#
 	 * Account and password info for a given user must match the contents of the Authorisation file, i.e. if a user X has password Y
@@ -468,7 +529,7 @@ public class ServerThreadInstance extends Thread{
 	 */
 	private int restricted(String dir){
 		File r = new File(dir + "\\.restrict");
-		if(r.isFile()){
+		if(r.exists()){
 			String line;
 			String[] info = null;
 			boolean validUser = false;
@@ -479,7 +540,7 @@ public class ServerThreadInstance extends Thread{
 				while((line = br.readLine()) != null){
 					info = line.split("#", -1);
 					if(info.length == 3){ // i.e. {[USER], [ACCT(s))], [PW]}
-						if(info[0] == Authoriser.user){
+						if(info[0].equals(Authoriser.user)){
 							validUser = true;
 							// check account
 							if("".equals(info[1])){ // no acct required for this user
@@ -487,7 +548,7 @@ public class ServerThreadInstance extends Thread{
 							}
 							else{
 								for(String accts : info[1].split(",", -1)){
-									if(accts.equals(Authoriser.acct)){ // i.e. current account in use
+									if(accts.equals(Authoriser.account)){ // i.e. current account in use
 										validAcct = true;
 									}
 								}
@@ -498,7 +559,7 @@ public class ServerThreadInstance extends Thread{
 								validPass = true;
 							}
 							else{
-								if(info[2] == Authoriser.pass){
+								if(info[2].equals(Authoriser.pass)){
 									validPass = true;
 								}
 							}						

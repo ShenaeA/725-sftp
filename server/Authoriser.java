@@ -39,7 +39,7 @@ public class Authoriser {
 	protected static Boolean validPass = false;
 	
 	protected static String user;
-	protected static String acct;
+	protected static String account;
 	protected static String[] accts;
 	protected static String pass;
 
@@ -155,6 +155,7 @@ public class Authoriser {
 				for(String acctname: accts){
 					if(inString.equals(acctname)){
 						validAcct = true;
+						account = acctname;
 						if(validPass){
 							response = "! Account valid, logged-in";
 						}
@@ -212,5 +213,27 @@ public class Authoriser {
 	// Helper function intended for Authoriser and ServerInstance
 	public boolean loggedIn(){
 		return validUser && validAcct && validPass;
+	}
+
+	/* 
+	 * ACCT CMD for CDIR
+	 * assumes a current valid user command active in remote system 
+	 * Specialised to help the CDIR function within ServerInstance.java
+	 * This function assumes the client has already successfully logged in with a username 
+	 * and so a list of accounts associated with that user already exist (acctname)
+	 * As the client logged in previously password authentication isn't required to be done again for an account change
+	 */
+	public boolean acctCDIR(String inString) throws Exception {
+		boolean response = false;
+		
+		for(String acctname: accts){
+			if(inString.equals(acctname)){
+				response = true;
+				account = inString;
+				break;
+			}
+		}				
+		
+		return response;
 	}
 }
