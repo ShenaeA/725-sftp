@@ -40,8 +40,9 @@ public class ServerThreadInstance extends Thread{
 	String sendType = "b"; // Default send type is binary
 	String storType = ""; 	// Store type (NEW | OLD | APP)
 	long fileLength;		// Length of file to store
-	private static final String workingDir = System.getProperty("user.dir")+"\\sft";
-	String activeDir = workingDir;
+	private static File serverFolderFile = new File(System.getProperty("user.dir"));
+	private static final String rootDir = (serverFolderFile.getParentFile()).getAbsolutePath();
+	String activeDir = rootDir;
 	
 	ServerThreadInstance(Socket s, String authFile){
 		this.socket = s;
@@ -50,6 +51,7 @@ public class ServerThreadInstance extends Thread{
 	
 	@Override
 	public void run(){
+		System.out.println(rootDir);
 		try{
 			socket.setReuseAddress(true);
 			bOutToClient = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
@@ -117,14 +119,14 @@ public class ServerThreadInstance extends Thread{
 				}
 				break;
 			
-			// case "CDIR":
-			// 	if(authoriser.loggedIn()){
-			// 		sendToClient(cdir(command[1]));
-			// 	}
-			// 	else{
-			// 		sendToClient("-Command not available, please log in first.");
-			// 	}
-			// 	break;
+			case "CDIR":
+				if(authoriser.loggedIn()){
+					//sendToClient(cdir(command));
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 			
 			case "KILL":
 				if(authoriser.loggedIn()){
@@ -205,7 +207,7 @@ public class ServerThreadInstance extends Thread{
 	public String list(String[] args){
 		String response = null;
 		// readding white space
-		String dir = workingDir;
+		String dir = activeDir;
 		String printDir = "\\";
 		if(args.length > 3){
 			for(int i = 2; i < args.length; i++){
@@ -373,7 +375,7 @@ public class ServerThreadInstance extends Thread{
 				return "-Wrong argument amount";
 			}
 
-			File delete = new File(workingDir + "\\" + fileSpec);
+			File delete = new File(activeDir + "\\" + fileSpec);
 			
 			if(!(delete.isFile())){
 				return "-Not deleted because file does not exist";
@@ -393,6 +395,38 @@ public class ServerThreadInstance extends Thread{
 		}
 		
 	}
+
+	/*
+	* CDIR CMD
+	* 
+	* 
+	*/
+	// private String cdir(String[] args){
+	// 	String response = "";
+	// 	String dir = "";
+	// 	try{
+	// 		if(args.length >=2){
+	// 			dir = whitespace(args, 2);
+	// 		}
+	// 		else{
+	// 			return "-Wrong argument amount";
+	// 		}
+	// 		if(!"/".equals(dir.substring(0,1))){
+	// 			dir = "/" + dir;
+	// 		}
+
+	// 		File f = new File(activeDir + dir);
+	// 		if(!f.isDirectory()){
+	// 			return "-Can't connect to directory because: input is not a valid directory";
+	// 		}
+
+	// 		int restr = restricted(dir);
+
+
+
+	// 	}
+	// }
+
 
 	/*
 	 * whitespace - helper function
@@ -416,6 +450,78 @@ public class ServerThreadInstance extends Thread{
 		}
 		return dir;
 	}
+
+	/*
+	 * restricted
+	 * Helper function for checking if a folder/directory is resticted. Restricted directories have .restrict files within, 
+	 * containing requirements for a USER + ACCT/PW. This function checks the Authoriser to see if that ACCT/PW is currently in use
+	 * If not, a request for an ACCT/PW is made. 
+	 * 
+	 * File format must be the same as Authorisation.txt, having '#' between each field, and use ',' to separate ACCTs
+	 * e.g. USER#ACCT,ACCT2#PASSWORD or USER##PASSWORD or USER#ACCT#
+	 * Account and password info for a given user must match the contents of the Authorisation file, i.e. if a user X has password Y
+	 * in Authorisation.txt, then if a password is specified in .restrict, it must be Y. Same principle for any specified account info.
+	 * 
+	 * Returns an int signifying access status: [0 = no restriction], [1 = restricted but required USER/ACCT/PW is currently active],
+	 * [2 = restriction, need ACCT/PW of current user (i.e. need to change acounts)], 
+	 * [3 = restricted, current user has no access], [4 = an error with the .restricted file], [5 = another error occurred]
+	 */
+	private int restricted(String dir){
+		File r = new File(dir + "\\.restrict");
+		if(r.isFile()){
+			String line;
+			String[] info = null;
+			boolean validUser = false;
+			boolean validAcct = false;
+			boolean validPass = false;
+			try {
+				BufferedReader br = new BufferedReader(new FileReader(r));
+				while((line = br.readLine()) != null){
+					info = line.split("#", -1);
+					if(info.length == 3){ // i.e. {[USER], [ACCT(s))], [PW]}
+						if(info[0] == Authoriser.user){
+							validUser = true;
+							// check account
+							if("".equals(info[1])){ // no acct required for this user
+								validAcct = true;
+							}
+							else{
+								for(String accts : info[1].split(",", -1)){
+									if(accts.equals(Authoriser.acct)){ // i.e. current account in use
+										validAcct = true;
+									}
+								}
+							}
+
+							// check password
+							if("".equals(info[2])){
+								validPass = true;
+							}
+							else{
+								if(info[2] == Authoriser.pass){
+									validPass = true;
+								}
+							}						
+						}
+						
+					}
+					else{
+						br.close();
+						return 4;
+					}
+				}
+				br.close();
+				return ((!validUser) ? 3 : ((validAcct && validPass) ? 1 : 2)); // check user: if valid, check either current account or password is wrong, if so then request, if not then all valid.
+			} catch (IOException e) {
+				if(Server.seeSysOutput) System.err.println(e);
+				return 5;
+			}
+		}
+		else{
+			return 0; 
+		}
+	}
+
 
 	/* 
      * sendToClient (command)
