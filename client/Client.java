@@ -6,7 +6,9 @@ import java.net.Socket;
 
 public class Client {
     static String[] validCommands;
-    static String ft = System.getProperty("user.dir")+"\\cft";
+    private static File clientFolderFile = new File(System.getProperty("user.dir"));
+	private static final String rootDir = (clientFolderFile.getParentFile()).getAbsolutePath();
+	String activeDir = rootDir;
     static String HOSTNAME = "localhost";
     static int PORT_NUMBER = 9999;
     static Socket socket;
@@ -20,8 +22,6 @@ public class Client {
     static DataInputStream bInFromServer;
 
     public static void main(String[] args) throws Exception {
-        new File(ft).mkdir(); // creates file transfer (ft) folder if doesn't already exist
-
         validCommands = new String[]{"USER","ACCT","PASS","TYPE","LIST","CDIR","KILL","NAME","TOBE","DONE","RETR","SEND","STOP","STOR"};
         
         try{
@@ -294,9 +294,9 @@ public class Client {
     //         }
     //     }
 
-    //     File fileToSend = new File(ft.getPath()+ "/" + spec); // location for file
+    //     File fileToSend = new File(activeDir.getPath()+ "/" + spec); // location for file
     //     if(!fileToSend.isFile()){ 
-    //         System.out.println("File " + spec + " does not exist in pathing: " + ft.getPath().toString());
+    //         System.out.println("File " + spec + " does not exist in pathing: " + activeDir.getPath().toString());
     //         return;
     //     }
 
