@@ -259,7 +259,7 @@ public class ServerThreadInstance extends Thread{
 			}
 			
 		}
-		dir += printDir;
+		dir = rootDir + dir + printDir;
 
 		if(!(new File(dir).isDirectory())){
 			return "-Invalid directory";
