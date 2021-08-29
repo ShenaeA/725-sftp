@@ -4,6 +4,13 @@ Connected to localhost via port number 9999
 !JUSTUSER logged in
 > CDIR server/sft
 !Changed working directory to /server/sft
+> LIST F
++\
+New Compressed (zipped) Folder.zip
+new folder
+New Microsoft PowerPoint Presentation.pptx
+txt.txt
+
 > NAME txt.txt
 +File exists, send TOBE command with file's new name
 > CDIR server/   

@@ -520,7 +520,16 @@ public class ServerThreadInstance extends Thread{
 			f = new File(rootDir + activeDir + "\\" + filename);
 		}
 
-		if(f.isFile()){
+		boolean exists = false;
+		File dir = new File(rootDir + activeDir);
+
+		for(File file : dir.listFiles()){
+			if(filename.equals(file.getName()) && file.isFile()){
+				exists = true;
+			}
+		}
+
+		if(exists){
 			if(!(filename.equals(oldFileSpec)) || !nameFlag){ // i.e. NAME CMD hasn't been sent previously
 				oldFileSpec = filename;
 				if(activeDir.substring(activeDir.length() - 1).equals("\\")){ // ensures oldFileSpec string always ends in a slash
