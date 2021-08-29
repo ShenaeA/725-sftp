@@ -88,6 +88,47 @@ Account and password info for a given user must match the contents of the Author
 
 ## KILL Command
 
+### Permissions Example
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTACCT 
++JUSTACCT valid, send account
+> ACCT ACCTNAME
+! Account valid, logged-in
+> CDIR server/sft/new folder/folder
+-Cannot connect to /server/sft/new folder/folder because: current user does not have permission to access
+> KILL folder/TXT.txt
+-Not deleted because file does not exist
+> CDIR server/sft/new folder/      
+!Changed working directory to /server/sft/new folder/
+> KILL folder/TXT.txt
+-Not deleted because current user does not have permission to access to that directory. File existence unknown
+```
+
+### Case Sensitivity + General Usage Example
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTACCT 
++JUSTACCT valid, send account
+> ACCT ACCTNAME
+! Account valid, logged-in
+> CDIR server/sft/new folder/      
+!Changed working directory to /server/sft/new folder/
+> LIST F
++\
+folder
+New Text Document.txt
+
+> KILL new text document.txt
+-Not deleted because file does not exist. Note: case sensitive
+> KILL New Text Document.txt 
++New Text Document.txt deleted
+> KILL New Text Document.txt
+-Not deleted because file does not exist
+```
+
 
 ## NAME Command
 
@@ -127,6 +168,13 @@ Connected to localhost via port number 9999
 !JUSTUSER logged in
 > CDIR server/sft
 !Changed working directory to /server/sft
+> LIST F
++\
+New Compressed (zipped) Folder.zip
+new folder
+New Microsoft PowerPoint Presentation.pptx
+txt.txt
+
 > NAME txt.txt
 +File exists, send TOBE command with file's new name
 > CDIR server/   
@@ -146,6 +194,17 @@ Connected to localhost via port number 9999
 ```
 
 ## DONE Command
+The DONE command communicates to the server that the client wants to close the connection. The socket is then closed on both the client and server sides respoctively, and the respective thread on the server side ends.
+
+### Example
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER   
+!JUSTUSER logged in
+> DONE
++Finishing command received. Closing connection...
+```
 
 
 ## RETR Command

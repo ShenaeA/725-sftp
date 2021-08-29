@@ -4,11 +4,16 @@ Connected to localhost via port number 9999
 +JUSTACCT valid, send account
 > ACCT ACCTNAME
 ! Account valid, logged-in
-> CDIR server/sft/new folder/folder
--Cannot connect to /server/sft/new folder/folder because: current user does not have permission to access
-> KILL folder/TXT.txt
--Not deleted because file does not exist
 > CDIR server/sft/new folder/      
 !Changed working directory to /server/sft/new folder/
-> KILL folder/TXT.txt
--Not deleted because current user does not have permission to access to that directory. File existence unknown
+> LIST F
++\
+folder
+New Text Document.txt
+
+> KILL new text document.txt
+-Not deleted because file does not exist. Note: case sensitive
+> KILL New Text Document.txt 
++New Text Document.txt deleted
+> KILL New Text Document.txt
+-Not deleted because file does not exist
