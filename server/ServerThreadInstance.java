@@ -354,10 +354,39 @@ public class ServerThreadInstance extends Thread{
 				return "-Wrong argument amount";
 			}
 
-			File delete = new File(activeDir + "\\" + fileSpec);
+			// Checking that potential file being accessed isn't in a restricted folder that the current user cannot access
+			if(fileSpec.contains("\\") || fileSpec.contains("/")){
+				int idx1 = fileSpec.lastIndexOf("\\") + 1;
+				int idx2 = fileSpec.lastIndexOf("/") + 1;
+				String dir = fileSpec.substring(0, Math.max(idx1, idx2)); // gets the directory
+
+				if(!(dir.substring(0)).equals("\\") || (dir.substring(0)).equals("/")){ // checks formatting as activeDir doesn't have a slash afterwards
+					dir = "\\" + dir;
+				}
+
+				//[0 = no restriction], [1 = restricted but required USER/ACCT/PW is currently active],
+				//[2 = restriction, need ACCT/PW of current user (i.e. need to change acounts)], 
+				//[3 = restricted, current user has no access], [4 = an error with the .restricted file], [5 = another error occurred]
+				int result = restricted(rootDir + activeDir + dir);
+				if(!(result == 0 || result == 1)){
+					return "-Not deleted because current user does not have permission to access to that directory. File existence unknown";
+				}
+			}
+
+			File delete = new File(rootDir + activeDir + "\\" + fileSpec);
 			
-			if(!(delete.isFile())){
-				return "-Not deleted because file does not exist";
+			boolean exists = false;
+			File f = new File(rootDir + activeDir);
+
+			for(File file : f.listFiles()){
+				if(fileSpec.equals(file.getName()) && file.isFile()){
+					exists = true;
+				}
+			}
+			
+
+			if(!exists){
+				return "-Not deleted because file does not exist. Note: case sensitive";
 			}
 
 			if(delete.delete()){
