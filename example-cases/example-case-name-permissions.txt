@@ -8,6 +8,11 @@ Connected to localhost via port number 9999
 -Cannot connect to /server/sft/new folder/folder because: current user does not have permission to access
 > CDIR server/sft/new folder       
 !Changed working directory to /server/sft/new folder
+> LIST F
++\
+folder
+New Text Document.txt
+
 > NAME folder/TXT.txt
 -File exists but current user does not have permission to access to that directory
 > NAME folder\TXT.txt 

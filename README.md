@@ -4,11 +4,13 @@
 2. [Elements](#elements)
    1. [SFTPServer](#sftpserver)
    2. [SFTPClient](#sftpclient)
-   3. [Required Files](#required-files)
-   4. [Folder](#folders)
+   3. [Authorisation.txt](#authorisation.txt)
+   4. [Restricted folders](restricted-folders)
 3. [Set-ups](#setup)
    1. [Server](#server-setup)
    2. [Client](#client-setup)
+   3. [Authorisation.txt](#authorisation.txt)
+   4. [Restricted folders](restricted-folders)
 4. [Command Guide](#command-guide)
    1. [USER, ACCT and PASS Commands](#user-acct-and-pass-commands)
    2. [TYPE Command](#type-command)
@@ -16,9 +18,10 @@
    4. [CDIR Command](#cdir-command)
    5. [KILL Command](#kill-command)
    6. [NAME Command](#name-command)
-   7. [DONE Command](#done-command)
-   8. [RETR Command](#retr-command)
-   9. [STOR Command](#stor-command)
+   7. [TOBE Command](#tobe-command)
+   8. [DONE Command](#done-command)
+   9. [RETR Command](#retr-command)
+   10. [STOR Command](#stor-command)
 5. [Use Cases](#use-cases)
    1. [Example 1](#example-1)
    2. [Example 2](#example-2)
@@ -29,6 +32,8 @@
 
 
 # Elements
+
+# Set-ups
 ## Server
 Preface: make sure the authorisation file is set-up first. The default file will work, however, if you desire different users/accounts/passwords, then you'll need to edit as per the "[Authorisation.txt](#authorisiation.txt)" file instructions.
 To run the Server (Command Prompt or PowerShell):
@@ -41,8 +46,8 @@ To run the Server (Command Prompt or PowerShell):
 ## Client
 
 
-## Required Files 
-### Authorisation.txt
+
+## Authorisation.txt
 Valid syntax for user info in Authorisation.txt
 Note: case sensitive
 
@@ -63,8 +68,98 @@ USERNAME#ACCOUNTNAME#PASSWORD
 SCENARIO 4: user only needs a password, need two spaces for 'split' function
 USERNAME##PASSWORD
 
-## Folders
-### Restricted folders
+## Restricted folders
 File format must be the same as Authorisation.txt, having '#' between each field, and use ',' to separate ACCTs 
 e.g. USER#ACCT,ACCT2#PASSWORD or USER##PASSWORD or USER#ACCT#
 Account and password info for a given user must match the contents of the Authorisation file, i.e. if a user X has password Y in Authorisation.txt, then if a password is specified in .restrict, it must be Y. Same principle for any specified account info.
+
+# Command Guide
+## USER, ACCT and PASS Commands
+
+
+## TYPE Command
+
+
+## LIST Command
+
+
+## CDIR Command
+
+
+## KILL Command
+
+
+## NAME Command
+
+
+### Permissions example
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTACCT 
++JUSTACCT valid, send account
+> ACCT ACCTNAME
+! Account valid, logged-in
+> CDIR server/sft/new folder/folder
+-Cannot connect to /server/sft/new folder/folder because: current user does not have permission to access
+> CDIR server/sft/new folder       
+!Changed working directory to /server/sft/new folder
+> LIST F
++\
+folder
+New Text Document.txt
+
+> NAME folder/TXT.txt
+-File exists but current user does not have permission to access to that directory
+> NAME folder\TXT.txt 
+-File exists but current user does not have permission to access to that directory
+> TOBE folder\txt1.txt
+-ERROR: send NAME cmd first
+```
+## TOBE Command
+
+
+### NAME + TOBE Example
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER
+!JUSTUSER logged in
+> CDIR server/sft
+!Changed working directory to /server/sft
+> NAME txt.txt
++File exists, send TOBE command with file's new name
+> CDIR server/   
+!Changed working directory to /server/
+> TOBE txt1.txt
+-File wasn't renamed because there has been a change in current directory since last NAME command. Current directory is C:\Users\Shenae\uni\CS725\Assignments\A1\725-sftp\server. Please restart renaming process.
+> CDIR server/sft
+!Changed working directory to /server/sft
+> NAME txt.txt
++File exists, send TOBE command with file's new name
+> TOBE txt1.txt
++txt.txt renamed to txt1.txt
+> TOBE txt1.txt   
+-ERROR: send NAME cmd first
+> NAME txt.txt  
+-Invalid file name. Is not a file in this directory
+```
+
+## DONE Command
+
+
+## RETR Command
+
+
+## STOR Command
+
+
+# Use Cases
+## Example 1
+
+
+## Example 2
+
+
+## Example 3
+
