@@ -111,6 +111,9 @@ public class Client {
                 case "NAME":
                     name(args);
                     break;
+                case "TOBE":
+                    tobe(args);
+                    break;
             }
         }
     }
@@ -275,6 +278,25 @@ public class Client {
         }
         else{
             System.out.println("ERROR: Invalid argument input. 1 argument allowed for old file spec");
+        }
+    }
+
+    public static void tobe(String[] args){
+        if(args.length >= 2){ // i.e. TOBE new-file-spec, has a minimum of 2 arguments
+            String spec = "";
+            for(int i = 1; i < args.length; i++){
+                if(i == (args.length-1)){
+                    spec += args[i];
+                }
+                else{
+                    spec += args[i] + " ";
+                }
+            }
+            sendToServer(args[0] + " " + spec);
+            System.out.println(responseFromServer());
+        }
+        else{
+            System.out.println("ERROR: Invalid argument input. 1 argument allowed for new file spec");
         }
     }
 

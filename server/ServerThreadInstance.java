@@ -33,9 +33,11 @@ public class ServerThreadInstance extends Thread{
 	// User Authentication
 	protected static Authoriser authoriser;
 	
-	// Flags
-	boolean name = false;
-	boolean retr = false;
+	// Flags + GV
+	boolean nameFlag = false;
+	boolean retrFlag = false;
+	String oldFileSpec = "";
+	String oldFileDir = "";
 	
 	String sendType = "b"; // Default send type is binary
 	String storType = ""; 	// Store type (NEW | OLD | APP)
@@ -51,7 +53,6 @@ public class ServerThreadInstance extends Thread{
 	
 	@Override
 	public void run(){
-		System.out.println(rootDir);
 		try{
 			socket.setReuseAddress(true);
 			bOutToClient = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
@@ -157,14 +158,23 @@ public class ServerThreadInstance extends Thread{
 				}
 				break;
 			
-			// case "NAME":
-			// 	if(authoriser.loggedIn()){
-			// 		sendToClient(name(command[1]));
-			// 	}
-			// 	else{
-			// 		sendToClient("-Command not available, please log in first.");
-			// 	}
-			// 	break;
+			case "NAME":
+				if(authoriser.loggedIn()){
+					sendToClient(name(command));
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
+
+			case "TOBE":
+				if(authoriser.loggedIn()){
+					sendToClient(tobe(command));
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 			
 			// case "RETR":
 			// 	if(authoriser.loggedIn()){
@@ -328,57 +338,6 @@ public class ServerThreadInstance extends Thread{
 		return response;
 	}
 
-
-	/*
-	 * STOR CMD (inc SIZE)
-	 * 
-	 * 
-	 */
-	private String stor(String[] args){
-		String response = null;
-		// refilling any white space in file-sped
-		String fileName = "";
-		if(args.length > 3){
-			for(int i = 2; i < args.length; i++){
-                if(i == (args.length-1)){
-                    fileName += args[i];
-                }
-                else{
-                    fileName += args[i] + " ";
-                }
-            }
-		}
-
-		if(args[1] != null){
-			switch(args[1]){
-				case "NEW":
-					File file = new File(fileName);
-					if(file.isFile()){
-						sendToClient("+File exists, will create new generation of file");
-					}
-					else{
-						sendToClient("+File does not exist, will create new file");
-					}
-
-					
-
-
-					break;
-
-				case "OLD":
-
-
-					break;
-
-				case "APP":
-
-
-					break;
-			}
-		}
-		return response;
-	}
-
 	/*
 	 * KILL CMD
 	 * Deletes <file-spec> file from server system
@@ -469,7 +428,7 @@ public class ServerThreadInstance extends Thread{
 					response = "-Account exists but does not have permissions to enter this directory. Account has been changed to " + Authoriser.account + " and current directory is " + ((new File(rootDir + activeDir)).getAbsolutePath());
 					break;
 				case 3:
-					response = "-Cannot connect to " + dir + " because: error occurred with restricted file";
+					response = "-Cannot connect to " + dir + " because: current user does not have permission to access";
 					break;
 				case 4:
 					response = "-Cannot connect to " + dir + " because: error occurred with restricted file";
@@ -486,6 +445,179 @@ public class ServerThreadInstance extends Thread{
 		}
 	}
 
+
+	/* 
+	 * NAME CMD
+	 * 
+	 * 
+	 */
+	private String name(String[] args){
+		String response = "";
+		String filename = "";
+		File f;
+
+		if(args.length >= 2){
+			filename = whitespace(args, 2);
+		}
+		else {
+			nameFlag = false;
+			return "-ERROR: wrong argument amount, 1 argument rquired for NAME cmd <NAME old-file-spec>";
+		}
+		
+		// Checking that file being accessed isn't in a restricted folder that the current user cannot access
+		if(filename.contains("\\") || filename.contains("/")){
+        	int idx1 = filename.lastIndexOf("\\") + 1;
+			int idx2 = filename.lastIndexOf("/") + 1;
+        	String dir = filename.substring(0, Math.max(idx1, idx2)); // gets the directory
+
+			if(!(dir.substring(0)).equals("\\") || (dir.substring(0)).equals("/")){ // checks formatting
+				dir = "\\" + dir;
+			}
+
+			//[0 = no restriction], [1 = restricted but required USER/ACCT/PW is currently active],
+	 		//[2 = restriction, need ACCT/PW of current user (i.e. need to change acounts)], 
+	 		//[3 = restricted, current user has no access], [4 = an error with the .restricted file], [5 = another error occurred]
+			if(!(restricted(rootDir + activeDir + dir) == 0 || restricted(rootDir + activeDir + dir) == 1)){
+				nameFlag = false;
+				return "-File exists but current user does not have permission to access to that directory";
+			}
+		}
+
+
+		if(activeDir.substring(activeDir.length() - 1).equals("\\")){
+			f = new File(rootDir + activeDir + filename);
+		}
+		else{
+			f = new File(rootDir + activeDir + "\\" + filename);
+		}
+
+		if(f.isFile()){
+			if(!(filename.equals(oldFileSpec)) || !nameFlag){ // i.e. NAME CMD hasn't been sent previously
+				oldFileSpec = filename;
+				if(activeDir.substring(activeDir.length() - 1).equals("\\")){ // ensures oldFileSpec string always ends in a slash
+					oldFileDir = rootDir + activeDir;
+				}
+				else{
+					oldFileDir = rootDir + activeDir + "\\";
+				}
+				nameFlag = true;
+				response = "+File exists, send TOBE command with file's new name";
+			}
+			else{
+				response = "-Already send name, please send TOBE cmd";
+			}
+		}
+		else{
+			response = "-Invalid file name. Is not a file in this directory";
+			nameFlag = false;
+		}
+
+		return response;
+	}
+
+
+	/*
+	 * TOBE CMD
+	 * Used for the second part of the renaming process, where the new file name is received and the file is renamed
+	 * A valid NAME command must be received beofre this function can be successful
+	 */
+	private String tobe(String[] args){
+		String response = "";
+		if(nameFlag){
+			String newFileName = "";
+			if(args.length >= 2){
+				newFileName = whitespace(args, 2);
+			}
+			else{
+				nameFlag = false;
+				return "-File wasn't renamed because wrong argument amount, 1 argument required for TOBE cmd <TOBE new-file-spec>";
+			}
+
+			String dir = "";
+			if(activeDir.substring(activeDir.length() - 1).equals("\\")){
+				dir = rootDir + activeDir;
+			}
+			else{
+				dir = rootDir + activeDir + "\\";
+			}
+			// Check that haven't changed directories
+			if(!(oldFileDir.equals(dir))){
+				nameFlag = false;
+				File f = new File(dir);
+				return "-File wasn't renamed because there has been a change in current directory since last NAME command. Current directory is " + f.getAbsolutePath() + ". Please restart renaming process.";
+			}
+			
+			File oldname = new File(oldFileDir + oldFileSpec);
+			File newName = new File(oldFileDir + newFileName);
+			boolean successFlag = oldname.renameTo(newName);
+
+			if(successFlag){
+				response = "+" + oldFileSpec + " renamed to " + newFileName;
+			}
+			else{
+				response = "-File wasn't renamed for an unknown reason, please restart renaming process";
+			}
+
+		}
+		else {
+			response = "-ERROR: send NAME cmd first";
+		}
+
+		nameFlag = false;
+		return response;
+	}
+
+	
+
+	/*
+	 * STOR CMD (inc SIZE)
+	 * 
+	 * 
+	 */
+	private String stor(String[] args){
+		String response = null;
+		// refilling any white space in file-sped
+		String fileName = "";
+		if(args.length > 3){
+			for(int i = 2; i < args.length; i++){
+                if(i == (args.length-1)){
+                    fileName += args[i];
+                }
+                else{
+                    fileName += args[i] + " ";
+                }
+            }
+		}
+
+		if(args[1] != null){
+			switch(args[1]){
+				case "NEW":
+					File file = new File(fileName);
+					if(file.isFile()){
+						sendToClient("+File exists, will create new generation of file");
+					}
+					else{
+						sendToClient("+File does not exist, will create new file");
+					}
+
+					
+
+
+					break;
+
+				case "OLD":
+
+
+					break;
+
+				case "APP":
+
+
+					break;
+			}
+		}
+		return response;
+	}
 
 	/*
 	 * whitespace - helper function
