@@ -1,0 +1,16 @@
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTACCT 
++JUSTACCT valid, send account
+> ACCT ACCTNAME
+! Account valid, logged-in
+> CDIR server/sft/new folder/folder
+-Cannot connect to /server/sft/new folder/folder because: current user does not have permission to access
+> CDIR server/sft/new folder       
+!Changed working directory to /server/sft/new folder
+> NAME folder/TXT.txt
+-File exists but current user does not have permission to access to that directory
+> NAME folder\TXT.txt 
+-File exists but current user does not have permission to access to that directory
+> TOBE folder\txt1.txt
+-ERROR: send NAME cmd first

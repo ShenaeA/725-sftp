@@ -1,0 +1,22 @@
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER
+!JUSTUSER logged in
+> CDIR server/sft
+!Changed working directory to /server/sft
+> NAME txt.txt
++File exists, send TOBE command with file's new name
+> CDIR server/   
+!Changed working directory to /server/
+> TOBE txt1.txt
+-File wasn't renamed because there has been a change in current directory since last NAME command. Current directory is C:\Users\Shenae\uni\CS725\Assignments\A1\725-sftp\server. Please restart renaming process.
+> CDIR server/sft
+!Changed working directory to /server/sft
+> NAME txt.txt
++File exists, send TOBE command with file's new name
+> TOBE txt1.txt
++txt.txt renamed to txt1.txt
+> TOBE txt1.txt   
+-ERROR: send NAME cmd first
+> NAME txt.txt  
+-Invalid file name. Is not a file in this directory
