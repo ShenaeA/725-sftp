@@ -2,6 +2,8 @@
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.util.Date;
 
 
 public class Client {
@@ -338,8 +340,56 @@ public class Client {
 
     public static void send(String[] args){
         if(args.length == 1 && args[0].equals("SEND")){ // i.e. RETR new-file-spec, has a minimum of 2 arguments
-            sendToServer(args[0]);
-            System.out.println(responseFromServer());
+            sendToServer("SEND "); // needs space
+
+            try{
+                File fileSaveLocation = new File(clientFolderFile + "\\" + retrFileName);
+                Long abortTime = new Date().getTime() + retrFileSize*1000;
+                if(sendType.equals("a")){ // ASCII
+                    BufferedOutputStream fileReceive = new BufferedOutputStream(new FileOutputStream(fileSaveLocation, false));
+                    for(int i = 0; i < retrFileSize; i++){
+                        if(new Date().getTime() > abortTime){
+                            System.out.println("Time limit for file transfer reached. Timed out after " + retrFileSize*1000 + " seconds.");
+                            return;
+                        }
+                        fileReceive.write(aInFromServer.read());
+                    }
+                    fileReceive.flush();
+                    fileReceive.close();
+                    retrFlag = false;
+                    System.out.println("File saved at " + fileSaveLocation.getAbsolutePath());
+                }
+                else{ // BINARY
+                    FileOutputStream fileReceive = new FileOutputStream(fileSaveLocation, false);
+                    byte[] fileInBytes = new byte[(int) retrFileSize];
+                    int idx = 0;
+                    int s;
+                    while(idx < retrFileSize){
+                        s = bInFromServer.read(fileInBytes);
+                        if(new Date().getTime() > abortTime){
+                            System.out.println("Time limit for file transfer reached. Timed out after " + retrFileSize*1000 + " seconds.");
+                            fileReceive.flush();
+                            fileReceive.close();
+                            return;
+                        }
+                        fileReceive.write(fileInBytes, 0, s);
+                        idx+=s;
+                    }
+                    fileReceive.flush();
+                    fileReceive.close();
+                    retrFlag = false;
+                    System.out.println("File saved at " + fileSaveLocation.getAbsolutePath());
+                }
+            } 
+            catch (FileNotFoundException f){
+                System.out.println("ERROR: client folder (saving location) doesn't exist");
+            }
+            catch(SocketException g){
+                System.out.println("Server connection closed prematurely, file did not finish transferring.");
+            }
+            catch(Exception h){
+                if(Server.seeSysOutput) h.printStackTrace();
+            }
         }
         else{
             System.out.println("ERROR: Invalid argument input. No arguments permitted for SEND command");
