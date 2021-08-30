@@ -10,6 +10,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.*;
 
+import javax.xml.namespace.QName;
+
 /*
  * ServerInstance 
  * A thread which handles a new socket connection
@@ -36,12 +38,13 @@ public class ServerThreadInstance extends Thread{
 	// Flags + GV
 	boolean nameFlag = false;
 	boolean retrFlag = false;
+	long retrFileLength;
+	String retrFileDirAndName = "";
 	String oldFileSpec = "";
 	String oldFileDir = "";
-	
 	String sendType = "b"; // Default send type is binary
-	String storType = ""; 	// Store type (NEW | OLD | APP)
-	long fileLength;		// Length of file to store
+	String storType = ""; 	// Store type (NEW | OLD | APP
+	
 	private static File serverFolderFile = new File(System.getProperty("user.dir"));
 	private static final String rootDir = (serverFolderFile.getParentFile()).getAbsolutePath();
 	String activeDir = rootDir;
@@ -176,14 +179,32 @@ public class ServerThreadInstance extends Thread{
 				}
 				break;
 			
-			// case "RETR":
-			// 	if(authoriser.loggedIn()){
-			// 		sendToClient(retr(command[1]));
-			// 	}
-			// 	else{
-			// 		sendToClient("-Command not available, please log in first.");
-			// 	}
-			// 	break;
+			case "RETR":
+				if(authoriser.loggedIn()){
+					sendToClient(retr(command));
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
+
+			case "STOP":
+				if(authoriser.loggedIn()){
+					sendToClient(stop(command));
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
+
+			case "SEND":
+				if(authoriser.loggedIn()){
+					sendToClient(send(command));
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 			
 			// case "STOR":
 			// 	if(authoriser.loggedIn()){
@@ -348,6 +369,7 @@ public class ServerThreadInstance extends Thread{
 		try{
 			String response = null;
 			String fileSpec = "";
+			File delete;
 			if(args.length >= 2) {
 				fileSpec = whitespace(args, 2);
 			}
@@ -374,7 +396,12 @@ public class ServerThreadInstance extends Thread{
 				}
 			}
 
-			File delete = new File(rootDir + activeDir + "\\" + fileSpec);
+			if(activeDir.substring(activeDir.length() - 1).equals("\\")){
+				delete = new File(rootDir + activeDir + fileSpec);
+			}
+			else{
+				delete = new File(rootDir + activeDir + "\\" + fileSpec);
+			}
 			
 			boolean exists = false;
 			File f = new File(rootDir + activeDir);
@@ -486,7 +513,6 @@ public class ServerThreadInstance extends Thread{
 	private String name(String[] args){
 		String response = "";
 		String filename = "";
-		File f;
 
 		if(args.length >= 2){
 			filename = whitespace(args, 2);
@@ -513,14 +539,6 @@ public class ServerThreadInstance extends Thread{
 				nameFlag = false;
 				return "-Not deleted because current user does not have permission to access to that directory. File existence unknown";
 			}
-		}
-
-
-		if(activeDir.substring(activeDir.length() - 1).equals("\\")){
-			f = new File(rootDir + activeDir + filename);
-		}
-		else{
-			f = new File(rootDir + activeDir + "\\" + filename);
 		}
 
 		boolean exists = false;
@@ -615,16 +633,12 @@ public class ServerThreadInstance extends Thread{
 	 * 
 	 */
 	private String retr(String[] args){
-		String response = "";
-		//identify a file
 		String fileSpec = "";
-		File f;
-
 		if(args.length >= 2){
 			fileSpec = whitespace(args, 2);
 		}
 		else {
-			return "-ERROR: wrong argument amount, 1 argument rquired for RETR cmd <RETR file-spec>";
+			return "-ERROR: wrong argument amount, 1 argument required for RETR cmd <RETR file-spec>";
 		}
 		
 		// Checking that file being accessed isn't in a restricted folder that the current user cannot access
@@ -641,32 +655,100 @@ public class ServerThreadInstance extends Thread{
 	 		//[2 = restriction, need ACCT/PW of current user (i.e. need to change acounts)], 
 	 		//[3 = restricted, current user has no access], [4 = an error with the .restricted file], [5 = another error occurred]
 			if(!(restricted(rootDir + activeDir + dir) == 0 || restricted(rootDir + activeDir + dir) == 1)){
-				nameFlag = false;
 				return "-ERROR: cannot make requests for file(s) in that directory, current user does not have permission to access to that directory";
 			}
 		}
 
-
-		if(activeDir.substring(activeDir.length() - 1).equals("\\")){
-			f = new File(rootDir + activeDir + filename);
-		}
-		else{
-			f = new File(rootDir + activeDir + "\\" + filename);
-		}
-
-		boolean exists = false;
 		File dir = new File(rootDir + activeDir);
 
 		for(File file : dir.listFiles()){
-			if(filename.equals(file.getName()) && file.isFile()){
-				exists = true;
+			if(fileSpec.equals(file.getName()) && file.isFile()){
+				retrFlag = true;
+				retrFileLength = file.length();
+				retrFileDirAndName = rootDir + activeDir + "\\" + file.getName();
+				return Long.toString(retrFileLength);
 			}
 		}
 
-
-		return response;
+		return "-File does not exist";
 	}
 
+	/*
+	 * SEND CMD
+	 * Valid calls only occur after a valid RETR CMD call
+	 * 
+	 */
+	private String send(String[] args){
+		if(retrFlag){
+			try{
+				byte[] fileInBytes = new byte[(int) retrFileLength];
+				if(Server.seeSysOutput){
+					System.out.println("File length: " + Long.toString(retrFileLength) + "bytes " + ". \r\nSend type: \"" + sendType + "\".");
+				} 
+				File file = new File(retrFileDirAndName);
+				if(sendType.equals("a")){ // ASCII
+					BufferedInputStream readInFile = new BufferedInputStream(new FileInputStream(file));
+					aOutToClient.flush();
+
+					int b = 0;
+					while((b =readInFile.read(fileInBytes)) >= 0){
+						aOutToClient.write(fileInBytes, 0, b);
+					}
+
+					readInFile.close();
+				}
+				else{ // BINARY
+					FileInputStream readInFile = new FileInputStream(file);
+					bOutToClient.flush();
+
+					int b = 0;
+
+					while((b = readInFile.read()) >= 0){
+						bOutToClient.write(b);
+					}
+
+					readInFile.close();
+				}
+			}
+			catch(IOException e){
+				try {
+					socket.close();
+				} catch (IOException f) {
+					f.printStackTrace();
+				}
+				active = false;
+				return "-IOException occurred. Sending unsuccessful";
+			}
+			catch(Exception g){
+				if(Server.seeSysOutput) System.err.println(g);
+				return "-Sending unsuccessful";
+			}
+		}
+		else{
+			return "-Not file chosen. Need valid RETR command first.";
+		}
+		retrFlag = false;
+		return "+Sending successful";
+	}
+
+	/*
+	 * STOP CMD
+	 * Receiving a STOP after a RETR command means that the client doesn't want to receive the file anymore, 
+	 * and to cancel the retrieval process
+	 */
+	private String stop(String[] args){
+		if(args.length != 1 || !(args[0].equals("STOP"))){
+			return "-ERROR: incorrect input, 1 argument required for RETR cmd <RETR file-spec>";
+		}
+
+		if(retrFlag){
+			retrFlag = false;
+			return "+Ok, RETR aborted";
+		}
+		else{
+			return "-RETR was never started, so nothing to stop";
+		}
+	}
 	
 
 	/*

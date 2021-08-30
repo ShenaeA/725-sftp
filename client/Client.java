@@ -15,6 +15,9 @@ public class Client {
     static boolean active = true;
     static String activeCommand;
     static String sendType = "b";
+    static boolean retrFlag = false;
+    static String retrFileName = "";
+    static int retrFileSize;
 
     static DataOutputStream aOutToServer;
     static BufferedReader aInFromServer;
@@ -113,6 +116,12 @@ public class Client {
                     break;
                 case "TOBE":
                     tobe(args);
+                    break;
+                case "RETR":
+                    retr(args);
+                    break;
+                case "SEND":
+                    send(args);
                     break;
             }
         }
@@ -300,7 +309,42 @@ public class Client {
         }
     }
 
-    // TO DO: RETR
+    public static void retr(String[] args){
+        if(args.length >= 2){ // i.e. RETR new-file-spec, has a minimum of 2 arguments
+            String spec = "";
+            for(int i = 1; i < args.length; i++){
+                if(i == (args.length-1)){
+                    spec += args[i];
+                }
+                else{
+                    spec += args[i] + " ";
+                }
+            }
+            sendToServer(args[0] + " " + spec);
+            String response  = responseFromServer();
+            System.out.println(response);
+            if(!("-".equals(response.substring(0,1)))){
+                retrFileSize = Integer.parseInt(response);
+                retrFlag = true; 
+                retrFileName = spec;
+                System.out.println("Input either a SEND to receive file or STOP command to stop receiving process");
+            }
+        }
+        else{
+            System.out.println("ERROR: Invalid argument input. 1 argument allowed for file spec");
+            retrFlag = false;
+        }
+    }
+
+    public static void send(String[] args){
+        if(args.length == 1 && args[0].equals("SEND")){ // i.e. RETR new-file-spec, has a minimum of 2 arguments
+            sendToServer(args[0]);
+            System.out.println(responseFromServer());
+        }
+        else{
+            System.out.println("ERROR: Invalid argument input. No arguments permitted for SEND command");
+        }
+    }
 
     // // TO DO: STOR
     // public static void stor(String[] args){
