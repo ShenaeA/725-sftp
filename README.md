@@ -151,9 +151,9 @@ folder
 New Text Document.txt
 
 > NAME folder/TXT.txt
--File exists but current user does not have permission to access to that directory
+-Not deleted because current user does not have permission to access to that directory. File existence unknown
 > NAME folder\TXT.txt 
--File exists but current user does not have permission to access to that directory
+-Not deleted because current user does not have permission to access to that directory. File existence unknown
 > TOBE folder\txt1.txt
 -ERROR: send NAME cmd first
 ```
