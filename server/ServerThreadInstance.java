@@ -199,7 +199,7 @@ public class ServerThreadInstance extends Thread{
 
 			case "SEND":
 				if(authoriser.loggedIn()){
-					sendToClient(send(command));
+					send(command);
 				}
 				else{
 					sendToClient("-Command not available, please log in first.");
@@ -678,12 +678,12 @@ public class ServerThreadInstance extends Thread{
 	 * Valid calls only occur after a valid RETR CMD call
 	 * 
 	 */
-	private String send(String[] args){
+	private void send(String[] args){
 		if(retrFlag){
 			try{
 				byte[] fileInBytes = new byte[(int) retrFileLength];
 				if(Server.seeSysOutput){
-					System.out.println("File length: " + Long.toString(retrFileLength) + "bytes " + ". \r\nSend type: \"" + sendType + "\".");
+					System.out.println("File length: " + Long.toString(retrFileLength) + "bytes. \r\nSend type: \"" + sendType + "\".");
 				} 
 				File file = new File(retrFileDirAndName);
 				if(sendType.equals("a")){ // ASCII
@@ -708,6 +708,7 @@ public class ServerThreadInstance extends Thread{
 					}
 
 					readInFile.close();
+					bOutToClient.flush();
 				}
 			}
 			catch(IOException e){
@@ -717,18 +718,16 @@ public class ServerThreadInstance extends Thread{
 					f.printStackTrace();
 				}
 				active = false;
-				return "-IOException occurred. Sending unsuccessful";
+				if(Server.seeSysOutput) System.out.println("IOException occurred. Sending unsuccessful");
 			}
 			catch(Exception g){
 				if(Server.seeSysOutput) System.err.println(g);
-				return "-Sending unsuccessful";
 			}
 		}
 		else{
-			return "-Not file chosen. Need valid RETR command first.";
+			sendToClient("-Not file chosen. Need valid RETR command first.");
 		}
 		retrFlag = false;
-		return "+Sending successful";
 	}
 
 	/*
