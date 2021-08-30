@@ -341,7 +341,8 @@ public class ServerThreadInstance extends Thread{
 	/*
 	 * KILL CMD
 	 * Deletes <file-spec> file from server system
-	 * 
+	 * Permission is decided based on the active user/acct. 
+	 * NOTE: not based on password as password would've been inout to login for that user
 	 */
 	private String kill(String[] args){
 		try{
@@ -406,8 +407,9 @@ public class ServerThreadInstance extends Thread{
 
 	/*
 	* CDIR CMD
-	* 
-	* 
+	* For changing the active directory
+	* Permission is decided based on the active user/acct. 
+	* NOTE: not based on password as password would've been inout to login for that user
 	*/
 	private String cdir(String[] args){
 		String response = "";
@@ -477,8 +479,9 @@ public class ServerThreadInstance extends Thread{
 
 	/* 
 	 * NAME CMD
-	 * 
-	 * 
+	 * First part of the renaming process
+	 * Permission is decided based on the active user/acct. 
+	 * NOTE: not based on password as password would've been inout to login for that user
 	 */
 	private String name(String[] args){
 		String response = "";
@@ -508,7 +511,7 @@ public class ServerThreadInstance extends Thread{
 	 		//[3 = restricted, current user has no access], [4 = an error with the .restricted file], [5 = another error occurred]
 			if(!(restricted(rootDir + activeDir + dir) == 0 || restricted(rootDir + activeDir + dir) == 1)){
 				nameFlag = false;
-				return "-File exists but current user does not have permission to access to that directory";
+				return "-Not deleted because current user does not have permission to access to that directory. File existence unknown";
 			}
 		}
 
@@ -558,6 +561,7 @@ public class ServerThreadInstance extends Thread{
 	 * TOBE CMD
 	 * Used for the second part of the renaming process, where the new file name is received and the file is renamed
 	 * A valid NAME command must be received beofre this function can be successful
+	 * Assumes valid permissions base on previous verification with initial NAME command
 	 */
 	private String tobe(String[] args){
 		String response = "";
@@ -605,6 +609,64 @@ public class ServerThreadInstance extends Thread{
 		return response;
 	}
 
+	/*
+	 * RETR CMD
+	 * When client is requesting the server send a file
+	 * 
+	 */
+	private String retr(String[] args){
+		String response = "";
+		//identify a file
+		String fileSpec = "";
+		File f;
+
+		if(args.length >= 2){
+			fileSpec = whitespace(args, 2);
+		}
+		else {
+			return "-ERROR: wrong argument amount, 1 argument rquired for RETR cmd <RETR file-spec>";
+		}
+		
+		// Checking that file being accessed isn't in a restricted folder that the current user cannot access
+		if(fileSpec.contains("\\") || fileSpec.contains("/")){
+        	int idx1 = fileSpec.lastIndexOf("\\") + 1;
+			int idx2 = fileSpec.lastIndexOf("/") + 1;
+        	String dir = fileSpec.substring(0, Math.max(idx1, idx2)); // gets the directory
+
+			if(!(dir.substring(0)).equals("\\") || (dir.substring(0)).equals("/")){ // checks formatting
+				dir = "\\" + dir;
+			}
+
+			//[0 = no restriction], [1 = restricted but required USER/ACCT/PW is currently active],
+	 		//[2 = restriction, need ACCT/PW of current user (i.e. need to change acounts)], 
+	 		//[3 = restricted, current user has no access], [4 = an error with the .restricted file], [5 = another error occurred]
+			if(!(restricted(rootDir + activeDir + dir) == 0 || restricted(rootDir + activeDir + dir) == 1)){
+				nameFlag = false;
+				return "-ERROR: cannot make requests for file(s) in that directory, current user does not have permission to access to that directory";
+			}
+		}
+
+
+		if(activeDir.substring(activeDir.length() - 1).equals("\\")){
+			f = new File(rootDir + activeDir + filename);
+		}
+		else{
+			f = new File(rootDir + activeDir + "\\" + filename);
+		}
+
+		boolean exists = false;
+		File dir = new File(rootDir + activeDir);
+
+		for(File file : dir.listFiles()){
+			if(filename.equals(file.getName()) && file.isFile()){
+				exists = true;
+			}
+		}
+
+
+		return response;
+	}
+
 	
 
 	/*
@@ -631,7 +693,7 @@ public class ServerThreadInstance extends Thread{
 			switch(args[1]){
 				case "NEW":
 					File file = new File(fileName);
-					if(file.isFile()){
+					if(file.isFile()){ // not case sensitive
 						sendToClient("+File exists, will create new generation of file");
 					}
 					else{
