@@ -1,17 +1,12 @@
 # 725-sftp
 ## Table of Contents
 1. [Introduction](#introduction)
-2. [Elements](#elements)
+2. [Components and Set Ups](#components-and-set-ups)
    1. [SFTPServer](#sftpserver)
    2. [SFTPClient](#sftpclient)
    3. [Authorisation.txt](#authorisation.txt)
    4. [Restricted folders](restricted-folders)
-3. [Set-ups](#setup)
-   1. [Server](#server-setup)
-   2. [Client](#client-setup)
-   3. [Authorisation.txt](#authorisation.txt)
-   4. [Restricted folders](restricted-folders)
-4. [Command Guide](#command-guide)
+3. [Command Guide](#command-guide)
    1. [USER, ACCT and PASS Commands](#user-acct-and-pass-commands)
    2. [TYPE Command](#type-command)
    3. [LIST Command](#list-command)
@@ -22,20 +17,16 @@
    8. [DONE Command](#done-command)
    9. [RETR Command](#retr-command)
    10. [STOR Command](#stor-command)
-5. [Use Cases](#use-cases)
-   1. [Example 1](#example-1)
-   2. [Example 2](#example-2)
-   3. [Example 3](#example-3)
 
 
 # Introduction
+This is a java implementation of the RFC 913 simple file transfer protocol. Additional features have been added, like restricted folder capabilities.
 
-
-# Elements
-
-# Set-ups
+# Components and Set Ups
+The folder structure and naming of 725-sftp, client and server must not be renamed, as well as ftFolder after it generates.
 ## Server
-Preface: make sure the authorisation file is set-up first. The default file will work, however, if you desire different users/accounts/passwords, then you'll need to edit as per the "[Authorisation.txt](#authorisiation.txt)" file instructions.
+Preface: make sure the authorisation file is set-up first. The default file will work, however, if you desire different users/accounts/passwords, then you'll need to edit as per the "[Authorisation.txt](#authorisation.txt)" file instructions.
+
 To run the Server (Command Prompt or PowerShell):
 1. Open ../725-sftp/server and compile using "javac *.java" 
 2. Run with "java Server \[authorisation file name]"
@@ -44,8 +35,11 @@ To run the Server (Command Prompt or PowerShell):
    c. the authorisation file must be in the '725-sftp/server/' folder
 
 ## Client
+Preface: this is the client used to gain acces to the remote host/SFTP server. Currently the default port the client is connected to is port 9999, using "localhost' as the IP. If the connection isn't made there will be a response "Connection not made. Server may be inactive.", so make sure the server is running first. The client must be stored in the /client folder, as that is also where the storing of file transfers to client go.  
 
-
+To run the Client:
+1. Navigate to ../725-sftp/client and compile using "javac *.java"
+2. Run with "java Client"
 
 ## Authorisation.txt
 Valid syntax for user info in Authorisation.txt
