@@ -35,7 +35,7 @@ To run the Server (Command Prompt or PowerShell):
    c. the authorisation file must be in the '725-sftp/server/' folder
 
 ## Client
-Preface: this is the client used to gain acces to the remote host/SFTP server. Currently the default port the client is connected to is port 9999, using "localhost' as the IP. If the connection isn't made there will be a response "Connection not made. Server may be inactive.", so make sure the server is running first. The client must be stored in the /client folder, as that is also where the storing of file transfers to client go.  
+Preface: this is the client used to gain access to the remote host/SFTP server. Currently the default port the client is connected to is port 9999, using "localhost' as the IP. If the connection isn't made there will be a response "Connection not made. Server may be inactive.", so make sure the server is running first. The client must be stored in the /client folder, as that is also where the storing of file transfers to client goes.  
 
 To run the Client:
 1. Navigate to ../725-sftp/client and compile using "javac *.java"
@@ -48,7 +48,7 @@ Note: case sensitive and spaces are not permitted. If file is left blank, it is 
 IF Authorisation.txt IS LEFT EMPTY, SYSTEM IS ASSUMED TO HAVE NO USERS, SO ANY USER INPUT FROM CLIENT WILL BE VALID
 
 Can have more than one account, but not more than one password. 
-This is because the password is only ascociated with the user, not the individual accounts.
+This is because the password is only associated with the user, not the individual accounts.
 There can be multiple accounts for billing purposes.
 
 Scenario 1: user without account or password required. There must be two # after the username 
@@ -59,7 +59,7 @@ Scenario 2: user only requires an account name. There must be a # after the last
 Scenario 3: user requires account and password. 
 USERNAME#ACCOUNTNAME#PASSWORD
 
-SCENARIO 4: user only needs a password, need two spaces for 'split' function
+Scenario 4: user only needs a password, need two spaces for 'split' function
 USERNAME##PASSWORD
 
 ## Restricted folders
@@ -208,7 +208,7 @@ Connected to localhost via port number 9999
 ```
 
 ## TYPE Command
-The type command changes the expected mapping type for files being sent and received. 
+The TYPE command changes the expected mapping type for files being sent and received. 
 The default is 'B' or binary. Options are "A" for ASCII, "B' for binary, or "C" for continuous (also a binary formatting).
 Current implementation does not check input file type before send/receive, so will break if the incorrect type is selected before using commands like RETR or STOR.
 
@@ -289,7 +289,7 @@ folder
 ```
 
 ## CDIR Command
-This will change the current working directory on the remote host to the argument passed.
+The CDIR function will change the current working directory on the remote host to the argument passed.
 Format: CDIR new-directory
 
 ### Example
@@ -421,7 +421,7 @@ txt.txt
 ```
 
 ## DONE Command
-The DONE command communicates to the server that the client wants to close the connection. The socket is then closed on both the client and server sides respoctively, and the respective thread on the server side ends.
+The DONE command communicates to the server that the client wants to close the connection. The socket is then closed on both the client and server sides respectively, and the respective thread on the server side ends.
 
 Format: DONE
 
@@ -554,7 +554,7 @@ Sending...
 ```
 
 ### OLD Example
-This example continue on from the previous one
+This example continues on from the previous one (NEW):
 ```
 > STOR OLD txt.txt
 +Will write over old file
@@ -565,7 +565,7 @@ Sending...
 ```
 
 ### APP Example
-This example continue on from the previous one, so the final txt.txt size is 50 bytes.
+This example continue on from the previous one (OLD), so the final txt.txt size is 50 bytes.
 i.e. 19 bytes overwritten by 25 butes, then appended by another 25 bytes = 50 bytes.
 ```
 > STOR APP txt.txt 
