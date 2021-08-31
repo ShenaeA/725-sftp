@@ -375,7 +375,7 @@ public class Client {
                     fileReceive.flush();
                     fileReceive.close();
                     retrFlag = false;
-                    System.out.println("File saved at " + fileSaveLocation.getAbsolutePath());
+                    // System.out.println("+File saved at " + fileSaveLocation.getAbsolutePath());
                 }
                 else{ // BINARY
                     FileOutputStream fileReceive = new FileOutputStream(fileSaveLocation, false);

@@ -296,7 +296,7 @@ public class ServerThreadInstance extends Thread{
 			int idx2 = printDir.lastIndexOf("/") + 1;
 			String dirRest = printDir.substring(0, Math.max(idx1, idx2)); // gets the directory
 
-			if(!(dirRest.substring(0)).equals("\\") || (dirRest.substring(0)).equals("/")){ // checks formatting as activeDir doesn't have a slash afterwards
+			if(!(dirRest.substring(0,1).equals("\\") || (dirRest.substring(0,1)).equals("/"))){ // checks formatting as activeDir doesn't have a slash afterwards
 				dirRest = "\\" + dirRest;
 			}
 
@@ -406,7 +406,7 @@ public class ServerThreadInstance extends Thread{
 				int idx2 = fileSpec.lastIndexOf("/") + 1;
 				String dir = fileSpec.substring(0, Math.max(idx1, idx2)); // gets the directory
 
-				if(!(dir.substring(0)).equals("\\") || (dir.substring(0)).equals("/")){ // checks formatting as activeDir doesn't have a slash afterwards
+				if(!(dir.substring(0,1).equals("\\") || (dir.substring(0,1)).equals("/"))){ // checks formatting as activeDir doesn't have a slash afterwards
 					dir = "\\" + dir;
 				}
 
@@ -551,7 +551,7 @@ public class ServerThreadInstance extends Thread{
 			int idx2 = filename.lastIndexOf("/") + 1;
         	String dir = filename.substring(0, Math.max(idx1, idx2)); // gets the directory
 
-			if(!(dir.substring(0)).equals("\\") || (dir.substring(0)).equals("/")){ // checks formatting
+			if(!(dir.substring(0,1).equals("\\") || (dir.substring(0,1)).equals("/"))){ // checks formatting
 				dir = "\\" + dir;
 			}
 
@@ -663,6 +663,14 @@ public class ServerThreadInstance extends Thread{
 		else {
 			return "-ERROR: wrong argument amount, 1 argument required for RETR cmd <RETR file-spec>";
 		}
+
+		String activeDirTemp = activeDir;
+		activeDirTemp = activeDirTemp.replace("/", "");
+		activeDirTemp = activeDirTemp.replace("\\", "");
+		if(activeDirTemp.equals("client")){
+			return "-Invalid directory, this is the destination folder, any file you're requesting from here is already there";
+		}
+
 		
 		// Checking that file being accessed isn't in a restricted folder that the current user cannot access
 		if(fileSpec.contains("\\") || fileSpec.contains("/")){
@@ -670,7 +678,7 @@ public class ServerThreadInstance extends Thread{
 			int idx2 = fileSpec.lastIndexOf("/") + 1;
         	String dir = fileSpec.substring(0, Math.max(idx1, idx2)); // gets the directory
 
-			if(!(dir.substring(0)).equals("\\") || (dir.substring(0)).equals("/")){ // checks formatting
+			if(!(dir.substring(0,1).equals("\\") || (dir.substring(0,1)).equals("/"))){ // checks formatting
 				dir = "\\" + dir;
 			}
 
@@ -717,7 +725,7 @@ public class ServerThreadInstance extends Thread{
 					while((b =readInFile.read(fileInBytes)) >= 0){
 						aOutToClient.write(fileInBytes, 0, b);
 					}
-
+					aOutToClient.flush();
 					readInFile.close();
 				}
 				else{ // BINARY
