@@ -309,6 +309,11 @@ public class Client {
         }
     }
 
+    /*
+     * TOBE CMD
+     * tobe(String[command, argument, possible other arguments])
+     * This function is the second half of the NAME command/renaming process
+     */
     public static void tobe(String[] args){
         if(args.length >= 2){ // i.e. TOBE new-file-spec, has a minimum of 2 arguments
             String spec = "";
@@ -328,6 +333,14 @@ public class Client {
         }
     }
 
+    /*
+     * RETR CMD
+     * retr(String[command, argument, possible other arguments])
+     * For requesting files of the remote system, saving to root/client i.e. 727-sftp/client
+     * This function checks whether the input string is correct for command RETR
+     * The old-file-spec argument may have been previously split because of spaces in the file name. 
+     * The function rejoins the argument with spaces, as originally input
+     */
     public static void retr(String[] args){
         if(args.length >= 2){ // i.e. RETR new-file-spec, has a minimum of 2 arguments
             String spec = "";
@@ -354,7 +367,13 @@ public class Client {
             retrFlag = false;
         }
     }
-
+    
+    /*
+     * SEND CMD
+     * send(String[command, argument, possible other arguments], only looking for the command though
+     * This function checks whether the input string is correct for command SEND
+     * A second half of the RETR function/process to request a file be sent to root/client
+     */
     public static void send(String[] args){
         if(args.length == 1 && args[0].equals("SEND")){ // i.e. RETR new-file-spec, has a minimum of 2 arguments
             sendToServer("SEND "); // needs space
@@ -405,12 +424,28 @@ public class Client {
                 System.out.println("Server connection closed prematurely, file did not finish transferring.");
             }
             catch(Exception h){
-                if(Server.seeSysOutput) h.printStackTrace();
+                System.out.println("-Something went wrong. Check file still exists");;
             }
         }
         else{
             System.out.println("ERROR: Invalid argument input. No arguments permitted for SEND command");
         }
+    }
+
+    /*
+     * STOP CMD
+     * stop(String[command, argument, possible other arguments], only looking for the command though
+     * This function stops the RETR process
+     */
+    public static void stop(String[] args){
+        if(args.length == 1 && args[0].equals("STOP")){ // i.e. RETR new-file-spec, has a minimum of 2 arguments
+            sendToServer("STOP "); // needs space
+            System.out.println(responseFromServer());
+        }
+        else{
+            System.out.println("ERROR: Invalid argument input. No arguments permitted for STOP command");
+        }
+
     }
 
 
