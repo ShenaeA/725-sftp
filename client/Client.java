@@ -10,7 +10,7 @@ public class Client {
     static String[] validCommands;
     private static File clientFolderFile = new File(System.getProperty("user.dir"));
 	private static final String rootDir = (clientFolderFile.getParentFile()).getAbsolutePath();
-	String activeDir = rootDir;
+	static String activeDir = rootDir;
     static String HOSTNAME = "localhost";
     static int PORT_NUMBER = 9999;
     static Socket socket;
@@ -25,6 +25,7 @@ public class Client {
     static BufferedReader aInFromServer;
     static DataOutputStream bOutToServer;
     static DataInputStream bInFromServer;
+
 
     public static void main(String[] args) throws Exception {
         validCommands = new String[]{"USER","ACCT","PASS","TYPE","LIST","CDIR","KILL","NAME","TOBE","DONE","RETR","SEND","STOP","STOR"};
@@ -125,6 +126,9 @@ public class Client {
                 case "SEND":
                     send(args);
                     break;
+                case "STOR":
+                    stor(args);
+                    break;
             }
         }
     }
@@ -136,7 +140,7 @@ public class Client {
      * If it is, then the command will be sent to the server as a consolidated string, otherwise and error is thrown
      */
     public static void validate(String cmd, String[] args){
-        if(args.length != 2){ // i.e. its should be <command> [<SPACE> <args>] <NULL>
+        if((args.length != 2 && !(cmd.equals("USER"))) || ((args.length < 1 || args.length > 2) && (cmd.equals("USER")))){ // i.e. its should be <command> [<SPACE> <args>] <NULL>
             String s = null;
             switch (activeCommand) {
                 case "USER":
@@ -232,12 +236,25 @@ public class Client {
                 }
             }
             sendToServer(args[0] + " " + dir);
-            System.out.println(responseFromServer());
+            String response = responseFromServer();
+            if("!".equals(response.substring(0,1))){
+                if(rootDir.substring(rootDir.length() - 1).equals("\\") || rootDir.substring(rootDir.length() - 1).equals("/")){
+                    activeDir = rootDir + dir;
+                }
+                else{
+                    activeDir = rootDir + "\\" + dir;
+                }
+            }
+            else if("E".equals(response.substring(0,1))){ // an error occurred, server also changes the active directory back to root
+                activeDir = rootDir;
+            }
+            System.out.println(response);
         }
         else{
             System.out.println("ERROR: Invalid argument input. 1 argument allowed for a new directory");
         }
     }
+
 
     /*
      * KILL CMD
@@ -344,12 +361,13 @@ public class Client {
 
             try{
                 File fileSaveLocation = new File(clientFolderFile + "\\" + retrFileName);
-                Long abortTime = new Date().getTime() + retrFileSize*1000;
+                Long abortTime = new Date().getTime() + retrFileSize; // 1 millisecond per byte timeout
                 if(sendType.equals("a")){ // ASCII
                     BufferedOutputStream fileReceive = new BufferedOutputStream(new FileOutputStream(fileSaveLocation, false));
                     for(int i = 0; i < retrFileSize; i++){
                         if(new Date().getTime() > abortTime){
-                            System.out.println("Time limit for file transfer reached. Timed out after " + retrFileSize*1000 + " seconds.");
+                            System.out.println("Time limit for file transfer reached. Timed out after " + retrFileSize + " milliseconds.");
+                            fileReceive.close();
                             return;
                         }
                         fileReceive.write(aInFromServer.read());
@@ -367,8 +385,7 @@ public class Client {
                     while(idx < retrFileSize){
                         s = bInFromServer.read(fileInBytes);
                         if(new Date().getTime() > abortTime){
-                            System.out.println("Time limit for file transfer reached. Timed out after " + retrFileSize*1000 + " seconds.");
-                            fileReceive.flush();
+                            System.out.println("Time limit for file transfer reached. Timed out after " + retrFileSize + " milliseconds.");
                             fileReceive.close();
                             return;
                         }
@@ -396,71 +413,111 @@ public class Client {
         }
     }
 
-    // // TO DO: STOR
-    // public static void stor(String[] args){
-    //     String spec = "";
-    //     if(args.length >= 3){ // i.e. STOR file-spec, has a minimum of 3 arguments
-    //         for(int i = 1; i < args.length; i++){
-    //             if(i == (args.length-1)){
-    //                 spec += args[i];
-    //             }
-    //             else{
-    //                 spec += args[i] + " ";
-    //             }
-    //         }
-    //     }
-
-    //     File fileToSend = new File(activeDir.getPath()+ "/" + spec); // location for file
-    //     if(!fileToSend.isFile()){ 
-    //         System.out.println("File " + spec + " does not exist in pathing: " + activeDir.getPath().toString());
-    //         return;
-    //     }
-
-    //     // // Compare sending type and existing file format
-    //     // if("a".equals(sendType)){
-    //     //     // if file not in ascii format
-    //     // }
-    //     // else if("b".equals(sendType) || "c".equals(sendType)){
-    //     //     //if file not in binary formatting
-    //     // }
-
-    //     sendToServer(args[0] + args[1] + spec);
-    //     String response = responseFromServer();
-    //     System.out.println(response);
-
-    //     if("+".equals(response.substring(0,1))){ 
-    //         // Begin SIZE cmd
-    //         System.out.println("File size sending: " + fileToSend.length() + " ... "); // file length in bytes/characters
-    //         sendToServer("SIZE " + fileToSend.length());
-    //         response = responseFromServer();
-    //         System.out.println(response);
-
-    //         if("+".equals(response.substring(0,1))){
-    //             System.out.println("Sending...");
-
-    //             try{
-    //                 if("a".equals(sendType)){
-    //                     // send ascii
-    //                     aOutToServer.flush();
-    //                     int b = 0;
-                        
-    //                 }
-    //                 else{
-    //                     // send binary or continuous
-    //                     bOutToServer.flush();
 
 
-    //                 }
-    //             }
+    /*
+     * STOR CMD
+     * Sends SIZE command automatically
+     * 
+     */
+    public static void stor(String[] args){
+        String spec = "";
+        if(args.length >= 3){ // i.e. STOR file-spec, has a minimum of 3 arguments
+            for(int i = 2; i < args.length; i++){
+                if(i == (args.length-1)){
+                    spec += args[i];
+                }
+                else{
+                    spec += args[i] + " ";
+                }
+            }
+        }
+        else{
+            System.out.println("ERROR: Invalid argument input. Must have 3 arguments, STOR { NEW | OLD | APP } file-spec");
+        }
 
-    //         }
-    //     }
-    //     else{
-    //         System.out.println("ERROR: Invalid argument input. Must have 3 arguments, STOR { NEW | OLD | APP } file-spec");
-    //     }
+        // validating file, case sensitive
+        boolean exists = false;
+        File f = new File(activeDir);
+        for(File file : f.listFiles()){
+            if(spec.equals(file.getName()) && file.isFile()){
+                exists = true;
+            }
+        }
 
+        if(!exists){ 
+            System.out.println("File " + spec + " does not exist in pathing: " + activeDir);
+            return;
+        }
+        
+        // // Compare sending type and existing file format
+        // if("a".equals(sendType)){
+        //     // if file not in ascii format
+        // }
+        // else if("b".equals(sendType) || "c".equals(sendType)){
+        //     //if file not in binary formatting
+        // }
 
-    // }
+        sendToServer(args[0] + " " + args[1] + " " + spec);
+        String response = responseFromServer();
+        System.out.println(response);
+
+        File fileToSend = new File(activeDir + "/" + spec); // location for file
+        String fileSize = Long.toString(fileToSend.length());
+
+        if("+".equals(response.substring(0,1))){ 
+            // Begin SIZE cmd
+            System.out.println("Validating that there is space for file. File to be sent size is " + fileToSend.length() + " bytes"); // file length in bytes/characters
+            sendToServer("SIZE " + fileSize);
+            response = responseFromServer();
+            System.out.println(response);
+
+            if("+".equals(response.substring(0,1))){
+                System.out.println("Sending...");
+
+                try{
+                    byte[] fileInBytes = new byte[(int) fileToSend.length()];
+                    if(sendType.equals("a")){ // ASCII
+                        BufferedInputStream readInFile = new BufferedInputStream(new FileInputStream(fileToSend));
+                        aOutToServer.flush();
+    
+                        int b = 0;
+                        while((b =readInFile.read(fileInBytes)) >= 0){
+                            aOutToServer.write(fileInBytes, 0, b);
+                        }
+    
+                        readInFile.close();
+                    }
+                    else{ // BINARY
+                        FileInputStream readInFile = new FileInputStream(fileToSend);
+                        bOutToServer.flush();
+                        int b = 0;
+                        while((b = readInFile.read()) >= 0){
+                            bOutToServer.write(b);
+                        }
+                        readInFile.close();
+                        bOutToServer.flush();
+                    }
+
+                    response = responseFromServer();
+                    System.out.println(response);
+                }
+                catch(IOException e){
+                    try {
+                        socket.close();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                    active = false;
+                    if(Server.seeSysOutput) System.out.println("IOException occurred. Sending unsuccessful");
+                }
+                catch(Exception g){
+                    if(Server.seeSysOutput) System.err.println(g);
+                }
+            }
+        }
+        
+    }
 
     /* 
      * sendToServer(command)
