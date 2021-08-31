@@ -4,7 +4,7 @@
 2. [Components and Set Ups](#components-and-set-ups)
    1. [SFTPServer](#sftpserver)
    2. [SFTPClient](#sftpclient)
-   3. [Authorisation.txt](#authorisation.txt)
+   3. [Authorisation File](#authorisation-file)
    4. [Restricted folders](restricted-folders)
 3. [Command Guide](#command-guide)
    1. [USER, ACCT and PASS Commands](#user-acct-and-pass-commands)
@@ -25,7 +25,7 @@ This is a java implementation of the RFC 913 simple file transfer protocol. Addi
 # Components and Set Ups
 The folder structure and naming of 725-sftp, client and server must not be renamed, as well as ftFolder after it generates.
 ## Server
-Preface: make sure the authorisation file is set-up first. The default file will work, however, if you desire different users/accounts/passwords, then you'll need to edit as per the "[Authorisation.txt](#authorisation.txt)" file instructions.
+Preface: make sure the authorisation file is set-up first. The default file will work, however, if you desire different users/accounts/passwords, then you'll need to edit as per the "[Authorisation.txt](#authorisation-file)" file instructions.
 
 To run the Server (Command Prompt or PowerShell):
 1. Open ../725-sftp/server and compile using "javac *.java" 
@@ -41,7 +41,7 @@ To run the Client:
 1. Navigate to ../725-sftp/client and compile using "javac *.java"
 2. Run with "java Client"
 
-## Authorisation.txt
+## Authorisation File
 Valid syntax for user info in Authorisation.txt
 Note: case sensitive and spaces are not permitted. If file is left blank, it is assumed any USER command is valid for login
 
