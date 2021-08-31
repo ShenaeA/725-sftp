@@ -49,7 +49,7 @@ To run the Server (Command Prompt or PowerShell):
 
 ## Authorisation.txt
 Valid syntax for user info in Authorisation.txt
-Note: case sensitive
+Note: case sensitive and spaces are not permitted. If file is left blank, it is assumed any USER command is valid for login
 
 IF Authorisation.txt IS LEFT EMPTY, SYSTEM IS ASSUMED TO HAVE NO USERS, SO ANY USER INPUT FROM CLIENT WILL BE VALID
 
@@ -74,19 +74,234 @@ e.g. USER#ACCT,ACCT2#PASSWORD or USER##PASSWORD or USER#ACCT#
 Account and password info for a given user must match the contents of the Authorisation file, i.e. if a user X has password Y in Authorisation.txt, then if a password is specified in .restrict, it must be Y. Same principle for any specified account info.
 
 # Command Guide
-## USER, ACCT and PASS Commands
+The client receive responses from the server beginning with either a !, + or -.
+The '>' indicates where the client has made an input. 
 
+## USER, ACCT and PASS Commands
+After starting up the client, the first thing that is required is logging in. 
+Authorisation/permissions are set using the authorisation file.
+Depending on the contents the user (client) may need to invoke a USER/ACCT/PASS command and input information. When the authorisation file is empty, the user still needs to enter a user-id. It can be anything as long as there is no spaces or hashtags.
+
+USER command can be reused over and over, and typing user again will cause the client to log out.
+
+Format: USER user-id
+Format: ACCT account
+Format: PASS password
+
+### Empty authorisation file
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER myname
++
+```
+
+The examples for USER, ACCT, and PASS use the following Authorisation.txt:
+```
+JUSTUSER##
+JUSTACCT#ACCTNAME#
+TWOACCT#ACCT1,ACCT2#
+JUSTPASS##password1
+ALL#ACCTNAME1,ACCTNAME2,ACCTNAME3#password2
+```
+
+### JUSTUSER
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER
+!JUSTUSER logged in
+```
+### TWOACCT
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER TWOACCT 
++TWOACCT valid, send account
+> ACCT ACCT2
+! Account valid, logged-in
+```
+### JUSTPASS
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTPASS
++JUSTPASS valid, send password
+> PASS password1
+! Logged in
+```
+### ALL
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER ALL
++ALL valid, send account and password
+> ACCT ACCTNAME2
++Account valid, send password
+> PASS password2
+! Logged in
+```
+### Changing User
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER
+!JUSTUSER logged in
+> TYPE A
++Using Ascii mode
+> USER TWOACCT
++TWOACCT valid, send account
+> TYPE B
+-Command not available, please log in first.
+> ACCT ACCT1
+! Account valid, logged-in
+> TYPE B
++Using Binary mode
+```
+### Error Cases
+#### Login
+``` 
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER SOMETEXT
+-Invalid user-id, try again
+> TYPE A
+-Command not available, please log in first.
+> USER ALL    
++ALL valid, send account and password
+> TYPE A   
+-Command not available, please log in first.
+> ACCT ACCTNAME1
++Account valid, send password
+> TYPE A
+-Command not available, please log in first.
+> PASS password2
+! Logged in
+> TYPE A
++Using Ascii mode
+```
+#### Incorrect Account/Password 1
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER ALL
++ALL valid, send account and password
+> ACCT SOMEACCOUNT
+-Invalid account, try again
+> ACCT ACCTNAME1
++Account valid, send password
+> PASS PASSSSSS
+-Wrong password, try again
+> PASS password2
+! Logged in
+```
+#### Incorrect Account/Password 2
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER ALL
++ALL valid, send account and password
+> PASS PASSSSS
+-Wrong password, try again
+> PASS password2
++Send Account
+> ACCT ACCCCCTTTT
+-Invalid account, try again
+> PASS PASSSS
++Password not required, send account
+> ACCT ACCTNAME1
+! Account valid, logged-in
+```
 
 ## TYPE Command
+The type command changes the expected mapping type for files being sent and received. 
+The default is 'B' or binary. Options are "A" for ASCII, "B' for binary, or "C" for continuous (also a binary formatting).
+Current implementation does not check input file type before send/receive, so will break if the incorrect type is selected before using commands like RETR or STOR.
 
+Format: TYPE { A | B | C }
+
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER ALL
++ALL valid, send account and password
+> ACCT ACCTNAME2
++Account valid, send password
+> PASS password2
+! Logged in
+> TYPE A
++Using Ascii mode
+> TYPE B
++Using Binary mode
+> TYPE C
++Using Continuous mode
+```
 
 ## LIST Command
+The LIST command outputs the current working directory in one of two formats, "F" being standard formatting, and "V" being a verbose directory listing.
+Format: LIST { F | V } directory-path
 
+### General Use Case
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER
+!JUSTUSER logged in
+> CDIR /client
+!Changed working directory to /client
+> LIST F
++\
+Capture.PNG
+Capture1.PNG
+Capture2.PNG
+Client.java
+txt1.txt
+
+> LIST V
++\
+|Name                                                           |Size (kB)|R/W|Last Modified             |
+|Capture.PNG                                                    |99       |R/W|31/08/21, 1:07:39 AM NZST |
+|Capture1.PNG                                                   |0        |R/W|1/09/21, 3:01:47 AM NZST  |
+|Capture2.PNG                                                   |7        |R/W|1/09/21, 3:49:58 AM NZST  |
+|Client.java                                                    |22       |R/W|1/09/21, 4:17:44 AM NZST  |
+|txt1.txt                                                       |0        |R/W|1/09/21, 12:35:13 AM NZST |
+
+```
+
+### Permissions Error Case
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTACCT
++JUSTACCT valid, send account
+> ACCT ACCTNAME
+! Account valid, logged-in
+> CDIR server/sft/new folder/folder
+-Cannot connect to /server/sft/new folder/folder because: current user does not have permission to access
+> CDIR server/sft/new folder
+!Changed working directory to /server/sft/new folder
+> LIST F /folder
+-Cannot give a listing for a directory the current user does not have permission to access
+> LIST F        
++
+folder
+
+> LIST F /
++/
+folder
+
+> LIST V /folder 
+-Cannot give a listing for a directory the current user does not have permission to access
+```
 
 ## CDIR Command
 
+Format: CDIR new-directory
+
 
 ## KILL Command
+The KILL command deletes a file from the current working directory.
+Format: KILL file-spec
 
 ### Permissions Example
 ```
@@ -132,6 +347,8 @@ New Text Document.txt
 
 ## NAME Command
 
+Format: NAME old-file-spec
+
 
 ### Permissions example
 ```
@@ -159,6 +376,7 @@ New Text Document.txt
 ```
 ## TOBE Command
 
+Format: TOBE new-file-spec
 
 ### NAME + TOBE Example
 ```
@@ -196,6 +414,8 @@ txt.txt
 ## DONE Command
 The DONE command communicates to the server that the client wants to close the connection. The socket is then closed on both the client and server sides respoctively, and the respective thread on the server side ends.
 
+Format: DONE
+
 ### Example
 ```
 Connected to localhost via port number 9999
@@ -209,8 +429,20 @@ Connected to localhost via port number 9999
 
 ## RETR Command
 
+Format: RETR file-spec
+
+## SEND
+
+Format: SEND
+
+## STOP
+
+Format: STOP
+
 
 ## STOR Command
+
+Format: { NEW | OLD | APP } file-spec
 
 
 # Use Cases
