@@ -1,16 +1,14 @@
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.file.DirectoryIteratorException;
-import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
-import java.nio.file.NoSuchFileException;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.*;
-
-import javax.xml.namespace.QName;
 
 /*
  * ServerInstance 
@@ -43,7 +41,10 @@ public class ServerThreadInstance extends Thread{
 	String oldFileSpec = "";
 	String oldFileDir = "";
 	String sendType = "b"; // Default send type is binary
-	String storType = ""; 	// Store type (NEW | OLD | APP
+	String storType = ""; 	// Store type (NEW | OLD | APP)
+	String storDir = rootDir;
+	String storFileName = "";
+	boolean storFlag = false;
 	
 	private static File serverFolderFile = new File(System.getProperty("user.dir"));
 	private static final String rootDir = (serverFolderFile.getParentFile()).getAbsolutePath();
@@ -676,7 +677,7 @@ public class ServerThreadInstance extends Thread{
 	/*
 	 * SEND CMD
 	 * Valid calls only occur after a valid RETR CMD call
-	 * 
+	 * DOES NOT CHECK THE FILE BEFORE SENDING, SO BREAKS IF THE TYPE AND FILE TYPE DO NOT MATCH
 	 */
 	private void send(String[] args){
 		if(retrFlag){
@@ -752,11 +753,10 @@ public class ServerThreadInstance extends Thread{
 
 	/*
 	 * STOR CMD (inc SIZE)
-	 * 
+	 * RETR backwards, so instead of a file sending process, it's a file receiving process
 	 * 
 	 */
-	private String stor(String[] args){
-		String response = null;
+	private void stor(String[] args){
 		// refilling any white space in file-sped
 		String fileName = "";
 		if(args.length > 3){
@@ -797,7 +797,122 @@ public class ServerThreadInstance extends Thread{
 					break;
 			}
 		}
-		return response;
+		while(true){
+			String[] commandFromClient = commandFromClient().split(" ");
+			if(commandFromClient[0].equals("SIZE")){
+				storSize(commandFromClient);
+				storFlag = false;
+				break;
+			}
+			else{
+				sendToClient("You must input a SIZE command");
+			}
+		}
+	}
+
+
+	/*
+	 * SIZE CMD
+	 * 2nd phase of STOR process
+	 * 
+	 */
+	private void storSize(String[] args){
+		String numOfBytesString = "";
+		if(args.length >= 2){
+			numOfBytesString = whitespace(args, 2);
+		}
+		else {
+			sendToClient("-ERROR: wrong argument amount, 1 argument required for SIZE cmd <SIZE number-of-bytes-in-file");
+			return;
+		}
+
+		int numOfBytes = Integer.parseInt(numOfBytesString);
+		
+		File storDirFile;
+		if(storDir.substring(storDir.length() - 1).equals("\\") || storDir.substring(storDir.length() - 1).equals("/")){
+			storDirFile = new File(storDir + storFileName);
+		}
+		else{
+			storDir += "\\";
+			storDirFile = new File(storDir + "\\" + storFileName);
+		}
+		if(Server.seeSysOutput) System.out.println("Path: " + storDirFile.getAbsolutePath() + " Size: " + numOfBytes);
+		
+		if(storDirFile.getUsableSpace() > numOfBytes){
+			sendToClient("+Ok, waiting for file");
+		}
+		else{
+			sendToClient("-Not enough room, don't send it");
+			return;
+		}
+
+		// Make sure not overwriting existing file
+		if("NEW".equals(storType)){
+			File dir = new File(storDir);
+			boolean exists = false;
+			while(true){
+				for(File file : dir.listFiles()){ // using this loop instead of just file.isFile(), enables case sensitivity
+					if(storFileName.equals(file.getName()) && file.isFile()){
+						exists = true;
+					}
+				}
+				if(!exists) break;
+				sendToClient("Renaming so as to not override existing file");
+				Date date = new Date();  
+				DateFormat dateFormat = new SimpleDateFormat("yyyyMMddhhmmss");
+				storFileName += "-" + dateFormat.format(date).toString();
+			}
+		}
+
+		try{
+			File receiveFile = new File(storDir + storFileName); // Path for file being received
+			Long abortTime = new Date().getTime() + numOfBytes*1000;
+			if(sendType.equals("a")){ // ASCII
+				BufferedOutputStream fileReceive = new BufferedOutputStream(new FileOutputStream(receiveFile, false));
+				for(int i = 0; i < numOfBytes; i++){
+					if(new Date().getTime() > abortTime){
+						System.out.println("-Couldn't save because time limit for file transfer reached. Timed out after " + numOfBytes*1000 + " seconds.");
+						return;
+					}
+					fileReceive.write(aInFromClient.read());
+				}
+				storFlag = false;
+				fileReceive.flush();
+				fileReceive.close();
+				System.out.println("+Saved " + receiveFile.getAbsolutePath());
+			}
+			else{ // BINARY
+				FileOutputStream fileReceive = new FileOutputStream(receiveFile, false);
+				byte[] fileInBytes = new byte[(int) numOfBytes];
+				int idx = 0;
+				int s;
+				while(idx < numOfBytes){
+					s = bInFromClient.read(fileInBytes);
+					if(new Date().getTime() > abortTime){
+						System.out.println("-Couldn't save because time limit for file transfer reached. Timed out after " + numOfBytes*1000 + " seconds.");
+						fileReceive.flush();
+						fileReceive.close();
+						return;
+					}
+					fileReceive.write(fileInBytes, 0, s);
+					idx+=s;
+				}
+				storFlag = false;
+				fileReceive.flush();
+				fileReceive.close();
+				System.out.println("+Saved " + receiveFile.getAbsolutePath());
+			}
+		} 
+		catch (FileNotFoundException f){
+			System.out.println("-Couldn't save because file path/directory doesn't exist");
+		}
+		catch(SocketException g){
+			System.out.println("-Couldn't save because server connection closed prematurely, file did not finish transferring.");
+		}
+		catch(Exception h){
+			if(Server.seeSysOutput) h.printStackTrace();
+		}
+
 	}
 
 	/*
