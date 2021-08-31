@@ -295,9 +295,24 @@ folder
 ```
 
 ## CDIR Command
-
+This will change the current working directory on the remote host to the argument passed.
 Format: CDIR new-directory
 
+### Example
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTACCT
++JUSTACCT valid, send account
+> ACCT ACCTNAME
+! Account valid, logged-in
+> CDIR server/sft/new folder/folder
+-Cannot connect to /server/sft/new folder/folder because: current user does not have permission to access
+> CDIR server/sft/new folder
+!Changed working directory to /server/sft/new folder
+> CDIR /directory doesnt exist
+-Can't connect to directory because: input is not a valid directory
+```
 
 ## KILL Command
 The KILL command deletes a file from the current working directory.
@@ -344,8 +359,8 @@ New Text Document.txt
 -Not deleted because file does not exist
 ```
 
-
 ## NAME Command
+The NAME command renames a file
 
 Format: NAME old-file-spec
 
@@ -375,7 +390,7 @@ New Text Document.txt
 -ERROR: send NAME cmd first
 ```
 ## TOBE Command
-
+The TOBE command follows the NAME command to rename a file
 Format: TOBE new-file-spec
 
 ### NAME + TOBE Example
@@ -426,31 +441,153 @@ Connected to localhost via port number 9999
 +Finishing command received. Closing connection...
 ```
 
-
-## RETR Command
-
+## RETR Command + SEND/STOP
+Requests that the remote system then uses the SEND to send the specified file.
+Not permitted: making requests for files in the /client folder.
+SEND or STP command follows the RETR to tell the remote host the client wishes to continue with the request, and to send the file/stop the RETR process.
+If a file already exists in the /client folder with the same name, it will be overwritten.
 Format: RETR file-spec
+### Example
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER
+!JUSTUSER logged in
+> CDIR client
+!Changed working directory to /client
+> RETR TXT1.txt         
+-Invalid directory, this is the destination folder, any file you're requesting from here is already there
+> CDIR client/  
+!Changed working directory to /client/
+> RETR TXT1.txt 
+-Invalid directory, this is the destination folder, any file you're requesting from here is already there
+```
 
-## SEND
+### Permission Example
+The JUSTCCT user doesn't have permission as per the .restrict file within /folder
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTACCT                     
++JUSTACCT valid, send account
+> ACCT ACCTNAME
+! Account valid, logged-in
+> CDIR server/sft/new folder
+!Changed working directory to /server/sft/new folder
+> RETR /folder/.restrict            
+-ERROR: cannot make requests for file(s) in that directory, current user does not have permission to access to that directory
+```
 
-Format: SEND
+### Error Case
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER 
+!JUSTUSER logged in
+> CDIR server/sft
+!Changed working directory to /server/sft
+> LIST F
++
+Capture.PNG
+New Compressed (zipped) Folder.zip
+new folder
+New Microsoft PowerPoint Presentation.pptx     
+txt.txt
 
-## STOP
-
-Format: STOP
-
+> RETR txt.txt
+24
+Input either a SEND to receive file or STOP command to stop receiving process
+> KILL txt.txt
++txt.txt deleted
+> SEND
+-Something went wrong. Check file still exists
+> LIST F
+ERROR: Cannot send command. Connection to server closed.
+```
 
 ## STOR Command
-
+Tells the remote system to receive the following file and save it under that name in /server/ftFolder (file transfer folder).
 Format: { NEW | OLD | APP } file-spec
+"NEW" means a new file should be generated, "OLD" means it should overwrite the current file, and "APP" is that it should append the existing file.
 
+### NEW Example
+The example shows a typical use case, and also how it shall rename the transfer file if a file already exists with that name
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER
+!JUSTUSER logged in
+> CDIR server/ftFolder
+!Changed working directory to /server/ftFolder
+> LIST F
++
+Capture2.PNG
 
-# Use Cases
-## Example 1
+> CDIR client 
+!Changed working directory to /client
+> LIST F   
++
+Authorisation.txt
+Capture.PNG
+Capture1.PNG
+Capture2.PNG
+Client.java
+txt.txt
 
+> TYPE A
++Using Ascii mode
+> STOR NEW txt.txt  
++File exists, will create new generation of file
+Validating that there is space for file. File to be sent size is 19 bytes
++Ok, waiting for file
+Sending...
++Saved txt.txt
+> CDIR server/ftFolder
+!Changed working directory to /server/ftFolder
+> LIST F
++
+Capture2.PNG
+txt.txt
 
-## Example 2
+> CDIR client          
+!Changed working directory to /client
+> STOR NEW txt.txt  
++File exists, will create new generation of file
+Validating that there is space for file. File to be sent size is 19 bytes
++Ok, waiting for file
+Sending...
++Saved txt-20210901062131.txt
+```
 
+### OLD Example
+This example continue on from the previous one
+```
+> STOR OLD txt.txt
++Will write over old file
+Validating that there is space for file. File to be sent size is 25 bytes
++Ok, waiting for file
+Sending...
++Saved txt.txt
+```
 
-## Example 3
+### APP Example
+This example continue on from the previous one, so the final txt.txt size is 50 bytes.
+i.e. 19 bytes overwritten by 25 butes, then appended by another 25 bytes = 50 bytes.
+```
+> STOR APP txt.txt 
++Will append to file
+Validating that there is space for file. File to be sent size is 25 bytes
++Ok, waiting for file
+Sending...
++Saved txt.txt
+```
+
+### Error case
+Continuing from previous example:
+```
+> STOR APP txt1.txt 
+ERROR: File txt1.txt does not exist in pathing: C:\Users\Shenae\uni\CS725\Assignments\A1\725-sftp\client
+```
+This is an output from the client, not the remote host
+
 
