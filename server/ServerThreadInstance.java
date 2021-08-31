@@ -42,13 +42,14 @@ public class ServerThreadInstance extends Thread{
 	String oldFileDir = "";
 	String sendType = "b"; // Default send type is binary
 	String storType = ""; 	// Store type (NEW | OLD | APP)
-	String storDir = rootDir;
 	String storFileName = "";
 	boolean storFlag = false;
 	
 	private static File serverFolderFile = new File(System.getProperty("user.dir"));
 	private static final String rootDir = (serverFolderFile.getParentFile()).getAbsolutePath();
 	String activeDir = rootDir;
+	static String ftFolder = rootDir + "\\server\\ftFolder";
+	String storDir = ftFolder;
 	 
 	ServerThreadInstance(Socket s, String authFile){
 		this.socket = s;
@@ -69,6 +70,8 @@ public class ServerThreadInstance extends Thread{
 			if(Server.seeSysOutput) System.out.println("Something went wrong. Connection not made.");
 			sendToClient(negGreeting); 
 		}
+
+		new File(ftFolder).mkdir(); // creates a folder for the STOR function to save transferred files to
 		
 		while(active){
 			try {
@@ -207,14 +210,14 @@ public class ServerThreadInstance extends Thread{
 				}
 				break;
 			
-			// case "STOR":
-			// 	if(authoriser.loggedIn()){
-			// 		sendToClient(stor(command[1]));
-			// 	}
-			// 	else{
-			// 		sendToClient("-Command not available, please log in first.");
-			// 	}
-			// 	break;
+			case "STOR":
+				if(authoriser.loggedIn()){
+					stor(command);
+				}
+				else{
+					sendToClient("-Command not available, please log in first.");
+				}
+				break;
 		}
 			
 	}
@@ -260,7 +263,7 @@ public class ServerThreadInstance extends Thread{
 		String response = null;
 		// readding white space
 		String dir = activeDir;
-		String printDir = "\\";
+		String printDir = "";
 		if(args.length > 3){
 			for(int i = 2; i < args.length; i++){
                 if(i == (args.length-1)){
@@ -281,10 +284,29 @@ public class ServerThreadInstance extends Thread{
 			}
 			
 		}
-		dir = rootDir + dir + printDir;
+		dir = rootDir + dir + "\\" + printDir;
 
 		if(!(new File(dir).isDirectory())){
 			return "-Invalid directory";
+		}
+
+		// Checking that potential file being accessed isn't in a restricted folder that the current user cannot access
+		if(printDir.contains("\\") || printDir.contains("/")){
+			int idx1 = printDir.lastIndexOf("\\") + 1;
+			int idx2 = printDir.lastIndexOf("/") + 1;
+			String dirRest = printDir.substring(0, Math.max(idx1, idx2)); // gets the directory
+
+			if(!(dirRest.substring(0)).equals("\\") || (dirRest.substring(0)).equals("/")){ // checks formatting as activeDir doesn't have a slash afterwards
+				dirRest = "\\" + dirRest;
+			}
+
+			//[0 = no restriction], [1 = restricted but required USER/ACCT/PW is currently active],
+			//[2 = restriction, need ACCT/PW of current user (i.e. need to change acounts)], 
+			//[3 = restricted, current user has no access], [4 = an error with the .restricted file], [5 = another error occurred]
+			int result = restricted(rootDir + activeDir + printDir);
+			if(!(result == 0 || result == 1)){
+				return "-Cannot give a listing for a directory the current user does not have permission to access";
+			}
 		}
 		
 		if(args[1] != null){
@@ -759,7 +781,7 @@ public class ServerThreadInstance extends Thread{
 	private void stor(String[] args){
 		// refilling any white space in file-sped
 		String fileName = "";
-		if(args.length > 3){
+		if(args.length >= 3){
 			for(int i = 2; i < args.length; i++){
                 if(i == (args.length-1)){
                     fileName += args[i];
@@ -770,63 +792,87 @@ public class ServerThreadInstance extends Thread{
             }
 		}
 
+		boolean exists = false;
+		File dir = new File(rootDir + activeDir);
+		for(File file : dir.listFiles()){ // using this loop instead of just file.isFile(), enables case sensitivity
+			if(fileName.equals(file.getName()) && file.isFile()){
+				exists = true;
+				storFileName = fileName;
+				break;
+			}
+		}
+
 		if(args[1] != null){
 			switch(args[1]){
 				case "NEW":
-					File file = new File(fileName);
-					if(file.isFile()){ // not case sensitive
-						sendToClient("+File exists, will create new generation of file");
+					if(!exists){
+						sendToClient("+File does not exist, will create new file");
+						storType = "CREATE";
 					}
 					else{
-						sendToClient("+File does not exist, will create new file");
+						sendToClient("+File exists, will create new generation of file");
+						storType = "NEW";
 					}
-
-					
-
-
 					break;
 
 				case "OLD":
-
-
+					if(!exists){
+						sendToClient("+Will create new file");
+						storType = "CREATE";
+					}
+					else{
+						sendToClient("+Will write over old file");
+						storType = "OLD";
+					}
 					break;
 
 				case "APP":
-
-
+					if(!exists){
+						sendToClient("+Will create file");
+						storType = "CREATE";
+					}
+					else{
+						sendToClient("+Will append to file");
+						storType = "APP";
+					}
 					break;
+				default:
+					sendToClient("-Incorrect method argument. Possible arguments are 'NEW', 'OLD' or 'APP'");
 			}
 		}
-		while(true){
-			String[] commandFromClient = commandFromClient().split(" ");
-			if(commandFromClient[0].equals("SIZE")){
-				storSize(commandFromClient);
-				storFlag = false;
-				break;
-			}
-			else{
-				sendToClient("You must input a SIZE command");
+		try{
+			while(true){
+				String[] commandFromClient = commandFromClient().split(" ");
+				if(commandFromClient[0].equals("SIZE")){
+					String[] splitClientCommand = whitespace(commandFromClient, 1).split(" ");
+					if(commandFromClient.length >= 2){
+						int numOfBytes = Integer.parseInt(splitClientCommand[1]);
+						storSize(numOfBytes);
+						storFlag = false;
+						break;
+					}
+					else {
+						sendToClient("-ERROR: wrong argument amount, 1 argument required for SIZE cmd <SIZE number-of-bytes-in-file. Aborting STOR command.");
+					}
+				}
+				else{
+					sendToClient("-Incorrect command input. You must input a SIZE command, <SIZE number-of-bytes-in-file>");
+				}
 			}
 		}
+		catch (NumberFormatException n){
+			sendToClient("-Invalid size input. Couldn't convert input to a number. Aborting STOR command");
+			storFlag = false;
+		}
+		
 	}
 
 
 	/*
 	 * SIZE CMD
 	 * 2nd phase of STOR process
-	 * 
 	 */
-	private void storSize(String[] args){
-		String numOfBytesString = "";
-		if(args.length >= 2){
-			numOfBytesString = whitespace(args, 2);
-		}
-		else {
-			sendToClient("-ERROR: wrong argument amount, 1 argument required for SIZE cmd <SIZE number-of-bytes-in-file");
-			return;
-		}
-
-		int numOfBytes = Integer.parseInt(numOfBytesString);
+	private void storSize(int numOfBytes){
 		
 		File storDirFile;
 		if(storDir.substring(storDir.length() - 1).equals("\\") || storDir.substring(storDir.length() - 1).equals("/")){
@@ -836,9 +882,14 @@ public class ServerThreadInstance extends Thread{
 			storDir += "\\";
 			storDirFile = new File(storDir + "\\" + storFileName);
 		}
-		if(Server.seeSysOutput) System.out.println("Path: " + storDirFile.getAbsolutePath() + " Size: " + numOfBytes);
 		
-		if(storDirFile.getUsableSpace() > numOfBytes){
+		File space = new File(storDir);
+		if(Server.seeSysOutput) {
+			System.out.println("Path: " + storDirFile.getAbsolutePath() + " Size: " + numOfBytes);
+			System.out.println("Usable space: " + storDirFile.getUsableSpace());
+		}
+		
+		if(space.getUsableSpace() > numOfBytes){
 			sendToClient("+Ok, waiting for file");
 		}
 		else{
@@ -857,21 +908,25 @@ public class ServerThreadInstance extends Thread{
 					}
 				}
 				if(!exists) break;
-				sendToClient("Renaming so as to not override existing file");
+				//sendToClient("Renaming so as to not override existing file");
 				Date date = new Date();  
 				DateFormat dateFormat = new SimpleDateFormat("yyyyMMddhhmmss");
-				storFileName += "-" + dateFormat.format(date).toString();
+				String[] s = {storFileName.substring(0, (storFileName.lastIndexOf("."))), storFileName.substring((storFileName.lastIndexOf("."))+1, storFileName.length())}; // splits into name and extention
+
+				storFileName = s[0] + "-" + dateFormat.format(date).toString() + "." + s[1]; // putting the filename back together
+				exists = false;
 			}
 		}
 
 		try{
 			File receiveFile = new File(storDir + storFileName); // Path for file being received
-			Long abortTime = new Date().getTime() + numOfBytes*1000;
+			Long abortTime = new Date().getTime() + numOfBytes; // i.e. 1 millisecond per byte timeout
 			if(sendType.equals("a")){ // ASCII
-				BufferedOutputStream fileReceive = new BufferedOutputStream(new FileOutputStream(receiveFile, false));
+				BufferedOutputStream fileReceive = new BufferedOutputStream(new FileOutputStream(receiveFile, storType.equals("APP")));
 				for(int i = 0; i < numOfBytes; i++){
 					if(new Date().getTime() > abortTime){
-						System.out.println("-Couldn't save because time limit for file transfer reached. Timed out after " + numOfBytes*1000 + " seconds.");
+						sendToClient("-Couldn't save because time limit for file transfer reached. Timed out after " + numOfBytes + " milliseconds.");
+						fileReceive.close();
 						return;
 					}
 					fileReceive.write(aInFromClient.read());
@@ -879,18 +934,18 @@ public class ServerThreadInstance extends Thread{
 				storFlag = false;
 				fileReceive.flush();
 				fileReceive.close();
-				System.out.println("+Saved " + receiveFile.getAbsolutePath());
+				if(Server.seeSysOutput) System.out.println("Saved " + receiveFile.getAbsolutePath());
+				sendToClient("+Saved " + storFileName);
 			}
 			else{ // BINARY
-				FileOutputStream fileReceive = new FileOutputStream(receiveFile, false);
+				FileOutputStream fileReceive = new FileOutputStream(receiveFile, storType.equals("APP"));
 				byte[] fileInBytes = new byte[(int) numOfBytes];
 				int idx = 0;
 				int s;
 				while(idx < numOfBytes){
 					s = bInFromClient.read(fileInBytes);
 					if(new Date().getTime() > abortTime){
-						System.out.println("-Couldn't save because time limit for file transfer reached. Timed out after " + numOfBytes*1000 + " seconds.");
-						fileReceive.flush();
+						sendToClient("-Couldn't save because time limit for file transfer reached. Timed out after " + numOfBytes + " milliseconds.");
 						fileReceive.close();
 						return;
 					}
@@ -900,7 +955,8 @@ public class ServerThreadInstance extends Thread{
 				storFlag = false;
 				fileReceive.flush();
 				fileReceive.close();
-				System.out.println("+Saved " + receiveFile.getAbsolutePath());
+				if(Server.seeSysOutput) System.out.println("Saved " + receiveFile.getAbsolutePath());
+				sendToClient("+Saved " + storFileName);
 			}
 		} 
 		catch (FileNotFoundException f){
