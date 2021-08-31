@@ -481,7 +481,7 @@ public class Client {
         }
 
         if(!exists){ 
-            System.out.println("File " + spec + " does not exist in pathing: " + activeDir);
+            System.out.println("ERROR: File " + spec + " does not exist in pathing: " + activeDir);
             return;
         }
         
@@ -544,10 +544,10 @@ public class Client {
                         e1.printStackTrace();
                     }
                     active = false;
-                    if(Server.seeSysOutput) System.out.println("IOException occurred. Sending unsuccessful");
+                    System.out.println("IOException occurred. Sending unsuccessful");
                 }
                 catch(Exception g){
-                    if(Server.seeSysOutput) System.err.println(g);
+                    System.err.println(g);
                 }
             }
         }
