@@ -78,7 +78,6 @@ public class Client {
     }
 
 
-    // TO DO: executeClientCommand
     public static void executeClientCommand(String[] args) throws Exception {
         if(!(activeCommand == null)){
             switch (activeCommand){
@@ -452,8 +451,9 @@ public class Client {
 
     /*
      * STOR CMD
+     * stor(String[command, argument, possible other arguments]
+     * The function is the first step for receiving files from the host system
      * Sends SIZE command automatically
-     * 
      */
     public static void stor(String[] args){
         String spec = "";
