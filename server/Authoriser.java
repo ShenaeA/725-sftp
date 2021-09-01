@@ -219,6 +219,16 @@ public class Authoriser {
 		return account;
 	}
 
+	public void logout(){
+		validAcct = false;
+		validUser = false;
+		validPass = false;
+		account = "";
+		accts = null;
+		user = "";
+		pass = "";
+	}
+
 	/* 
 	 * ACCT CMD for CDIR
 	 * assumes a current valid user command active in remote system 

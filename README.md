@@ -205,6 +205,8 @@ Connected to localhost via port number 9999
 +Password not required, send account
 > ACCT ACCTNAME1
 ! Account valid, logged-in
+> PASS PASSSS
+-Already logged in
 ```
 
 ## TYPE Command
@@ -329,12 +331,75 @@ Connected to localhost via port number 9999
 +Directory ok, send account
 > ACCT ACCT1
 -Account exists but does not have permissions to enter this directory. Aced to ACCT1 and current directory is C:\root\725-sftp
+> CDIR server/sft/new folder/folder
++Directory ok, send account
+> ACCT ACCT2
++Account valid, account changed to ACCT2
+!Changed working directory to /server/sft/new folder/folder
 ```
 ## KILL Command
 The KILL command deletes a file from the current working directory.
 Format: KILL file-spec
 
+### General Use Case Example 
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTACCT
++JUSTACCT valid, send account
+> ACCT ACCTNAME
+! Account valid, logged-in
+> CDIR /
+!Changed working directory to /
+> LIST F
++
+.git
+.gitignore
+.vscode
+client
+example-cases
+README.md
+server
+txt.txt
+TXT1.txt
+
+> KILL txt.txt
++txt.txt deleted
+> LIST F
++
+.git
+.gitignore
+.vscode
+client
+example-cases
+README.md
+server
+TXT1.txt
+
+>
+```
+
+### Exists Example
+Continuing off the previous example:
+```
+> LIST F
++
+.git
+.gitignore
+.vscode
+client
+example-cases
+README.md
+server
+TXT1.txt
+
+>
+> KILL txt.txt
+-Not deleted because file does not exist. Note: case sensitive
+```
+
 ### Permissions Example
+The user 'JUSTACCT' doesn't have permission to enter ```/server/sft/new folder/folder```, whereas 'JUSTUSER' does
 ```
 Connected to localhost via port number 9999
 +SFTP RFC913 Server Activated :)
@@ -344,12 +409,20 @@ Connected to localhost via port number 9999
 ! Account valid, logged-in
 > CDIR server/sft/new folder/folder
 -Cannot connect to /server/sft/new folder/folder because: current user does not have permission to access
-> KILL folder/TXT.txt
--Not deleted because file does not exist
 > CDIR server/sft/new folder/      
 !Changed working directory to /server/sft/new folder/
 > KILL folder/TXT.txt
 -Not deleted because current user does not have permission to access to that directory. File existence unknown
+> USER JUSTUSER
+!JUSTUSER logged in
+> CDIR server/sft/new folder/folder
+!Changed working directory to /server/sft/new folder/folder
+> LIST F
++
+.restrict
+TXT.txt
+
+>
 ```
 
 ### Case Sensitivity + General Usage Example
@@ -371,38 +444,87 @@ New Text Document.txt
 -Not deleted because file does not exist. Note: case sensitive
 > KILL New Text Document.txt 
 +New Text Document.txt deleted
+> LIST F
++
+folder
+
+>
 > KILL New Text Document.txt
 -Not deleted because file does not exist
 ```
 
 ## NAME Command
-The NAME command renames a file
-
+The NAME command renames a file. This function includes renaming the extention, so caution is advised.
 Format: NAME old-file-spec
 
+### General Use Case
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTACCT
++JUSTACCT valid, send account
+> ACCT ACCTNAME
+! Account valid, logged-in
+> LIST F
++
+.git
+.gitignore
+.vscode
+client
+example-cases
+README.md
+server
+txt.txt
+TXT1.txt
 
+> NAME txt.txt
++File exists, send TOBE command with file's new name
+> TOBE changeExtention.doc
++txt.txt renamed to changeExtention.doc
+> LIST F
++
+.git
+.gitignore
+.vscode
+changeExtention.doc
+client
+example-cases
+README.md
+server
+TXT1.txt
+
+>
+```
 ### Permissions example
 ```
 Connected to localhost via port number 9999
 +SFTP RFC913 Server Activated :)
-> USER JUSTACCT 
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER
+!JUSTUSER logged in
+> CDIR server/sft/new folder/folder
+!Changed working directory to /server/sft/new folder/folder
+> LIST F
++
+.restrict
+TXT.txt
+
+> CDIR /
+!Changed working directory to /
+> USER JUSTACCT
 +JUSTACCT valid, send account
 > ACCT ACCTNAME
 ! Account valid, logged-in
 > CDIR server/sft/new folder/folder
 -Cannot connect to /server/sft/new folder/folder because: current user does not have permission to access
-> CDIR server/sft/new folder       
+> CDIR server/sft/new folder
 !Changed working directory to /server/sft/new folder
-> LIST F
-+\
-folder
-New Text Document.txt
-
 > NAME folder/TXT.txt
--Not deleted because current user does not have permission to access to that directory. File existence unknown
-> NAME folder\TXT.txt 
--Not deleted because current user does not have permission to access to that directory. File existence unknown
-> TOBE folder\txt1.txt
+-Cannot rename because current user does not have permission to access to that directory. File existence unknown
+> NAME \folder\TXT.txt
+-Cannot rename because current user does not have permission to access to that directory. File existence unknown
+> TOBE folder\TXT.txt
 -ERROR: send NAME cmd first
 ```
 ## TOBE Command
@@ -436,6 +558,15 @@ txt.txt
 +File exists, send TOBE command with file's new name
 > TOBE txt1.txt
 +txt.txt renamed to txt1.txt
+> LIST F
++
+Capture.PNG
+New Compressed (zipped) Folder.zip
+new folder
+New Microsoft PowerPoint Presentation.pptx
+txt1.txt
+
+>
 > TOBE txt1.txt   
 -ERROR: send NAME cmd first
 > NAME txt.txt  
@@ -443,18 +574,23 @@ txt.txt
 ```
 
 ## DONE Command
-The DONE command communicates to the server that the client wants to close the connection. The socket is then closed on both the client and server sides respectively, and the respective thread on the server side ends.
-
-Format: DONE
+The DONE command communicates to the server that the client wants to close the connection. The socket is then closed on both the client and server sides respectively, and the respective thread on the server side ends. Format: DONE
 
 ### Example
 ```
 Connected to localhost via port number 9999
 +SFTP RFC913 Server Activated :)
-> USER JUSTUSER   
+> USER JUSTUSER
 !JUSTUSER logged in
+> TYPE A
++Using Ascii mode
 > DONE
 +Finishing command received. Closing connection...
+PS C:\Users\Shenae\uni\CS725\Assignments\A1\725-sftp\client> java Client
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> TYPE A
+-Command not available, please log in first.
 ```
 
 ## RETR Command, and SEND or STOP
@@ -473,6 +609,17 @@ Connected to localhost via port number 9999
 +SFTP RFC913 Server Activated :)
 > USER JUSTUSER    
 !JUSTUSER logged in
+> CDIR client
+!Changed working directory to /client
+> LIST F
++
+Capture1.PNG
+Capture2.PNG
+Client.class
+Client.java
+txt.txt
+
+>
 > TYPE B
 +Using Binary mode
 > CDIR server/sft
@@ -486,10 +633,23 @@ New Microsoft PowerPoint Presentation.pptx
 txt.txt
 
 > RETR Capture.PNG
-99570
+3469
 Input either a SEND to receive file or STOP command to stop receiving process
 > SEND
 File saved at C:\root\725-sftp\client\Capture.PNG
+> CDIR client
+!Changed working directory to /client
+> LIST V
++
+|Name                                                           |Size (kB)|R/W|Last Modified             |
+|Capture.PNG                                                    |3        |R/W|1/09/21, 8:26:20 PM NZST  |
+|Capture1.PNG                                                   |0        |R/W|1/09/21, 3:01:47 AM NZST  |
+|Capture2.PNG                                                   |7        |R/W|1/09/21, 3:49:58 AM NZST  |
+|Client.class                                                   |13       |R/W|1/09/21, 8:20:00 PM NZST  |
+|Client.java                                                    |26       |R/W|1/09/21, 8:15:37 PM NZST  |
+|txt.txt                                                        |0        |R/W|1/09/21, 5:38:30 PM NZST  |
+
+>
 ```
 
 ### Cannot Retrieve from Client Folder Example
@@ -498,8 +658,8 @@ Connected to localhost via port number 9999
 +SFTP RFC913 Server Activated :)
 > USER JUSTUSER
 !JUSTUSER logged in
-> CDIR client
-!Changed working directory to /client
+> CDIR CLIENT
+!Changed working directory to /CLIENT
 > RETR TXT1.txt         
 -Invalid directory, this is the destination folder, any file you're requesting from here is already there
 ```
@@ -520,6 +680,7 @@ Connected to localhost via port number 9999
 ```
 
 ### Error Case
+KILL command removes the file to be sent, causes the socket to close on server side and connection to be lost
 ```
 Connected to localhost via port number 9999
 +SFTP RFC913 Server Activated :)
@@ -535,14 +696,15 @@ new folder
 New Microsoft PowerPoint Presentation.pptx     
 txt.txt
 
+> TYPE a
++Using Ascii mode
 > RETR txt.txt
 24
 Input either a SEND to receive file or STOP command to stop receiving process
 > KILL txt.txt
 +txt.txt deleted
 > SEND
--Something went wrong. Check file still exists
-> LIST F
+> CDIR /
 ERROR: Cannot send command. Connection to server closed.
 ```
 
@@ -583,7 +745,7 @@ New Microsoft PowerPoint Presentation.pptx
 txt.txt
 
 > RETR Capture.PNG
-ERROR: conflicting send type and input file type. Send type is A and file type is b/c
+ERROR: conflicting send type and input file type. Send type is A and file type is B or C
 ```  
 
 ## STOR Command
@@ -640,11 +802,20 @@ Validating that there is space for file. File to be sent size is 19 bytes
 +Ok, waiting for file
 Sending...
 +Saved txt-20210901062131.txt
+> CDIR server/ftFolder
+!Changed working directory to /server/ftFolder
+> LIST F
++
+Capture2.PNG
+txt-20210901062131.txt
+txt.txt
 ```
 
 ### OLD Example
 This example continues on from the previous one (NEW):
 ```
+> CDIR client
+!Changed working directory to /client
 > STOR OLD txt.txt
 +Will write over old file
 Validating that there is space for file. File to be sent size is 25 bytes
@@ -663,6 +834,15 @@ Validating that there is space for file. File to be sent size is 25 bytes
 +Ok, waiting for file
 Sending...
 +Saved txt.txt
+> LIST V
++
+|Name                                                           |Size (kB)|R/W|Last Modified             |
+|Authorisation.txt                                              |0        |R/W|1/09/21, 5:02:24 AM NZST  |
+|Capture.PNG                                                    |3        |R/W|1/09/21, 8:26:20 PM NZST  |
+|Capture1.PNG                                                   |0        |R/W|1/09/21, 3:01:47 AM NZST  |
+|Capture2.PNG                                                   |7        |R/W|1/09/21, 3:49:58 AM NZST  |
+|Client.java                                                    |26       |R/W|1/09/21, 8:48:34 PM NZST  |
+|txt.txt                                                        |0        |R/W|1/09/21, 8:50:37 PM NZST  |
 ```
 
 ### Error case

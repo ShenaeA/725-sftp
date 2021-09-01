@@ -211,11 +211,11 @@ public class Client {
                 }
                 sendToServer(args[0] + " " + args[1] + " " + dir); // LIST FORMAT DIRECTORY-PATH
             }
+            System.out.println(responseFromServer());
         }
         else{
             System.out.println("ERROR: Invalid argument input. Arguments for LIST are: \"F\", and \"V\".");
         }
-        System.out.println(responseFromServer());
     }
 
 
@@ -365,7 +365,7 @@ public class Client {
             try{
                 boolean fileTypeIsBinary = isBinaryFile(f.getAbsolutePath());
                 if((!fileTypeIsBinary && (sendType.equals("b") || sendType.equals("c"))) || (fileTypeIsBinary && (sendType.equals("a")))){
-                    System.out.println("ERROR: conflicting send type and input file type. Send type is " + sendType.toUpperCase() + (fileTypeIsBinary ? " and file type is B or C" : " and file type is a"));
+                    System.out.println("ERROR: conflicting send type and input file type. Send type is " + sendType.toUpperCase() + (fileTypeIsBinary ? " and file type is B or C" : " and file type is A"));
                     return;
                 }
             }
@@ -510,7 +510,7 @@ public class Client {
         try{
             boolean fileTypeIsBinary = isBinaryFile(fib.getAbsolutePath());
             if((!fileTypeIsBinary && (sendType.equals("b") || sendType.equals("c"))) || (fileTypeIsBinary && (sendType.equals("a")))){
-                System.out.println("ERROR: conflicting send type and input file type. Send type is " + sendType.toUpperCase() + (fileTypeIsBinary ? " and file type is B or C" : " and file type is a"));
+                System.out.println("ERROR: conflicting send type and input file type. Send type is " + sendType.toUpperCase() + (fileTypeIsBinary ? " and file type is B or C" : " and file type is A"));
                 return;
             }
         }
@@ -632,6 +632,7 @@ public class Client {
 				socket.close();
 				active = false;
                 System.out.println("ERROR: Cannot send command. Connection to server closed.");
+                System.exit(0);
 			}
 			catch (IOException f){}
 		}

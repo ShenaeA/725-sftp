@@ -77,6 +77,7 @@ public class ServerThreadInstance extends Thread{
 			try {
 				String[] commandFromClient = commandFromClient().split(" ");
 				if("DONE".equals(commandFromClient[0])){
+					authoriser.logout();
 					sendToClient("+Finishing command received. Closing connection...");
 					socket.close();
 					active = false;
@@ -560,7 +561,7 @@ public class ServerThreadInstance extends Thread{
 	 		//[3 = restricted, current user has no access], [4 = an error with the .restricted file], [5 = another error occurred]
 			if(!(restricted(rootDir + activeDir + dir) == 0 || restricted(rootDir + activeDir + dir) == 1)){
 				nameFlag = false;
-				return "-Not deleted because current user does not have permission to access to that directory. File existence unknown";
+				return "-Cannot rename because current user does not have permission to access to that directory. File existence unknown";
 			}
 		}
 
@@ -653,7 +654,7 @@ public class ServerThreadInstance extends Thread{
 	/*
 	 * RETR CMD
 	 * When client is requesting the server send a file
-	 * 
+	 * Permissions are checked, including current folder (i.e. it cannot be the 725-sftp/client folder)
 	 */
 	private String retr(String[] args){
 		String fileSpec = "";
@@ -667,7 +668,7 @@ public class ServerThreadInstance extends Thread{
 		String activeDirTemp = activeDir;
 		activeDirTemp = activeDirTemp.replace("/", "");
 		activeDirTemp = activeDirTemp.replace("\\", "");
-		if(activeDirTemp.equals("client")){
+		if((activeDirTemp.toLowerCase()).equals("client")){
 			return "-Invalid directory, this is the destination folder, any file you're requesting from here is already there";
 		}
 
