@@ -6,7 +6,7 @@
    2. [SFTPClient](#sftpclient)
    3. [Authorisation File](#authorisation-file)
    4. [Restricted folders](restricted-folders)
-3. [Command Guide + Example Test/Use Cases](#command-guide-+-example-test/use-cases)
+3. [Command Guide and Example Test/Use Cases](#command-guide-and-example-test/use-cases)
    1. [USER, ACCT and PASS Commands](#user-acct-and-pass-commands)
    2. [TYPE Command](#type-command)
    3. [LIST Command](#list-command)
@@ -67,7 +67,7 @@ File format must be the same as Authorisation.txt, having '#' between each field
 e.g. USER#ACCT,ACCT2#PASSWORD or USER##PASSWORD or USER#ACCT#
 Account and password info for a given user must match the contents of the Authorisation file, i.e. if a user X has password Y in Authorisation.txt, then if a password is specified in .restrict, it must be Y. Same principle for any specified account info.
 
-# Command Guide + Example Test/Use Cases
+# Command Guide and Example Test/Use Cases
 The client receive responses from the server beginning with either a !, + or -.
 The '>' indicates where the client has made an input. 
 
