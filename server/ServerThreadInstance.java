@@ -800,6 +800,15 @@ public class ServerThreadInstance extends Thread{
             }
 		}
 
+		String activeDirTemp = activeDir;
+		activeDirTemp = activeDirTemp.replace("/", "");
+		activeDirTemp = activeDirTemp.replace("\\", "");
+		if(activeDirTemp.equals("serverftFolder")){
+			sendToClient("-Invalid directory, this is the destination folder, any file you're requesting from here is already there");
+			storFlag = false;
+			return;
+		}
+
 		boolean exists = false;
 		File dir = new File(rootDir + activeDir);
 		for(File file : dir.listFiles()){ // using this loop instead of just file.isFile(), enables case sensitivity
