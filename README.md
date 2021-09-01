@@ -1,4 +1,4 @@
-# 725-sftp
+# README CS725 Assignment One
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Components and Set Ups](#components-and-set-ups)
@@ -6,7 +6,7 @@
    2. [SFTPClient](#sftpclient)
    3. [Authorisation File](#authorisation-file)
    4. [Restricted folders](restricted-folders)
-3. [Command Guide](#command-guide)
+3. [Command Guide + Example Test/Use Cases](#command-guide-+-example-test/use-cases)
    1. [USER, ACCT and PASS Commands](#user-acct-and-pass-commands)
    2. [TYPE Command](#type-command)
    3. [LIST Command](#list-command)
@@ -15,7 +15,7 @@
    6. [NAME Command](#name-command)
    7. [TOBE Command](#tobe-command)
    8. [DONE Command](#done-command)
-   9. [RETR Command](#retr-command)
+   9. [RETR Command + SEND/STOP](#retr-command+send/stop)
    10. [STOR Command](#stor-command)
 
 
@@ -67,7 +67,7 @@ File format must be the same as Authorisation.txt, having '#' between each field
 e.g. USER#ACCT,ACCT2#PASSWORD or USER##PASSWORD or USER#ACCT#
 Account and password info for a given user must match the contents of the Authorisation file, i.e. if a user X has password Y in Authorisation.txt, then if a password is specified in .restrict, it must be Y. Same principle for any specified account info.
 
-# Command Guide
+# Command Guide + Example Test/Use Cases
 The client receive responses from the server beginning with either a !, + or -.
 The '>' indicates where the client has made an input. 
 
@@ -328,7 +328,7 @@ Connected to localhost via port number 9999
 > CDIR server/sft/new folder/folder
 +Directory ok, send account
 > ACCT ACCT1
--Account exists but does not have permissions to enter this directory. Aced to ACCT1 and current directory is C:root\725-sftp
+-Account exists but does not have permissions to enter this directory. Aced to ACCT1 and current directory is C:\root\725-sftp
 ```
 ## KILL Command
 The KILL command deletes a file from the current working directory.
@@ -429,7 +429,7 @@ txt.txt
 > CDIR server/   
 !Changed working directory to /server/
 > TOBE txt1.txt
--File wasn't renamed because there has been a change in current directory since last NAME command. Current directory is C:\Users\Shenae\uni\CS725\Assignments\A1\725-sftp\server. Please restart renaming process.
+-File wasn't renamed because there has been a change in current directory since last NAME command. Current directory is C:\root\725-sftp\server. Please restart renaming process.
 > CDIR server/sft
 !Changed working directory to /server/sft
 > NAME txt.txt
@@ -466,7 +466,33 @@ If a file already exists in the /client folder with the same name, it will be ov
 This function assumes the correct TYPE command has been entered before starting. If sending a binary formatted file for example, PNG files, need to send: ```TYPE B``` or ```TYPE C``` first. For text or ASCII formatted files send: ```TYPE A```.
 
 Format: RETR file-spec
-### Example
+
+### General Use case
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER    
+!JUSTUSER logged in
+> TYPE B
++Using Binary mode
+> CDIR server/sft
+!Changed working directory to /server/sft
+> LIST F
++
+Capture.PNG
+New Compressed (zipped) Folder.zip
+new folder
+New Microsoft PowerPoint Presentation.pptx
+txt.txt
+
+> RETR Capture.PNG
+99570
+Input either a SEND to receive file or STOP command to stop receiving process
+> SEND
+File saved at C:\root\725-sftp\client\Capture.PNG
+```
+
+### Cannot Retrieve from Client Folder Example
 ```
 Connected to localhost via port number 9999
 +SFTP RFC913 Server Activated :)
@@ -475,10 +501,6 @@ Connected to localhost via port number 9999
 > CDIR client
 !Changed working directory to /client
 > RETR TXT1.txt         
--Invalid directory, this is the destination folder, any file you're requesting from here is already there
-> CDIR client/  
-!Changed working directory to /client/
-> RETR TXT1.txt 
 -Invalid directory, this is the destination folder, any file you're requesting from here is already there
 ```
 
@@ -524,7 +546,7 @@ Input either a SEND to receive file or STOP command to stop receiving process
 ERROR: Cannot send command. Connection to server closed.
 ```
 
-### SEND usage Error Case
+### SEND Usage Error Case
 ```
 Connected to localhost via port number 9999
 +SFTP RFC913 Server Activated :)
@@ -541,6 +563,28 @@ Input either a SEND to receive file or STOP command to stop receiving process
 > SEND
 ERROR: need valid RETR command before SEND can be used
 ```
+### Conflicting Input File and Send Types Example
+The client outputs and error.
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER
+!JUSTUSER logged in
+> TYPE A
++Using Ascii mode
+> CDIR server/sft
+!Changed working directory to /server/sft
+> LIST F
++
+Capture.PNG
+New Compressed (zipped) Folder.zip
+new folder
+New Microsoft PowerPoint Presentation.pptx
+txt.txt
+
+> RETR Capture.PNG
+ERROR: conflicting send type and input file type. Send type is A and file type is b/c
+```  
 
 ## STOR Command
 Tells the remote system to receive the following file and save it under that name in /server/ftFolder (file transfer folder).
@@ -625,7 +669,7 @@ Sending...
 Continuing from previous example:
 ```
 > STOR APP txt1.txt 
-ERROR: File txt1.txt does not exist in pathing: C:\Users\Shenae\uni\CS725\Assignments\A1\725-sftp\client
+ERROR: File txt1.txt does not exist in pathing: C:\root\725-sftp\client
 ```
 This is an output from the client, not the remote host
 

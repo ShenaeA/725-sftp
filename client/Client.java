@@ -12,7 +12,7 @@ public class Client {
     static String[] validCommands;
     private static File clientFolderFile = new File(System.getProperty("user.dir"));
 	private static final String rootDir = (clientFolderFile.getParentFile()).getAbsolutePath();
-	static String activeDir = "\\";
+	static String activeDir = rootDir;
     static String HOSTNAME = "localhost";
     static int PORT_NUMBER = 9999;
     static Socket socket;
@@ -356,16 +356,16 @@ public class Client {
 
             File f;
             if(("\\").equals(spec.substring(0,1)) || ("/").equals(spec.substring(0,1))){
-                f = new File(rootDir + activeDir + spec);
+                f = new File(activeDir + spec);
             }
             else{
-                f = new File(rootDir + activeDir + "\\" + spec);
+                f = new File(activeDir + "\\" + spec);
             }
             
             try{
                 boolean fileTypeIsBinary = isBinaryFile(f.getAbsolutePath());
                 if((!fileTypeIsBinary && (sendType.equals("b") || sendType.equals("c"))) || (fileTypeIsBinary && (sendType.equals("a")))){
-                    System.out.println("ERROR: conflicting send type and input file type. Send type is " + sendType.toUpperCase() + (fileTypeIsBinary ? " and file type is b/c" : " and file type is a"));
+                    System.out.println("ERROR: conflicting send type and input file type. Send type is " + sendType.toUpperCase() + (fileTypeIsBinary ? " and file type is B or C" : " and file type is a"));
                     return;
                 }
             }
