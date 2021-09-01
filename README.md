@@ -15,7 +15,7 @@
    6. [NAME Command](#name-command)
    7. [TOBE Command](#tobe-command)
    8. [DONE Command](#done-command)
-   9. [RETR Command + SEND/STOP](#retr-command+send/stop)
+   9. [RETR Command, and SEND or STOP](#retr-command-and-send-or-stop)
    10. [STOR Command](#stor-command)
 
 
@@ -457,7 +457,7 @@ Connected to localhost via port number 9999
 +Finishing command received. Closing connection...
 ```
 
-## RETR Command + SEND/STOP
+## RETR Command, and SEND or STOP
 Requests that the remote system then uses the SEND to send the specified file.
 Not permitted: making requests for files in the /client folder.
 SEND or STP command follows the RETR to tell the remote host the client wishes to continue with the request, and to send the file/stop the RETR process.
