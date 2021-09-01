@@ -1,4 +1,5 @@
 # README CS725 Assignment One
+https://github.com/ShenaeA/725-sftp
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Components and Set Ups](#components-and-set-ups)
@@ -17,7 +18,6 @@
    8. [DONE Command](#done-command)
    9. [RETR Command, and SEND or STOP](#retr-command-and-send-or-stop)
    10. [STOR Command](#stor-command)
-
 
 # Introduction
 This is a java implementation of the RFC 913 simple file transfer protocol. Additional features have been added, like restricted folder capabilities.
@@ -63,9 +63,9 @@ Scenario 4: user only needs a password, need two spaces for 'split' function
 USERNAME##PASSWORD
 
 ## Restricted folders
-File format must be the same as Authorisation.txt, having '#' between each field, and use ',' to separate ACCTs 
-e.g. USER#ACCT,ACCT2#PASSWORD or USER##PASSWORD or USER#ACCT#
-Account and password info for a given user must match the contents of the Authorisation file, i.e. if a user X has password Y in Authorisation.txt, then if a password is specified in .restrict, it must be Y. Same principle for any specified account info.
+Restricted folders exist when a ```.restrict``` file exists within the folder.
+File format must be the same as Authorisation.txt, having '#' between each field, and use ',' to separate ACCTs, e.g. USER#ACCT,ACCT2#PASSWORD or USER##PASSWORD or USER#ACCT#
+Account and password info for a given user within the ```.restrict``` must match the contents of the Authorisation file, i.e. if a user X has password Y in Authorisation.txt, then if a password is specified in .restrict, it must be Y. Same principle for any specified account info. Cannot have users in ```.restrict``` that do not exists in the authoriser file. 
 
 # Command Guide and Example Test or Use Cases
 The client receive responses from the server beginning with either a ! + or -.
@@ -83,6 +83,7 @@ Format: ACCT account
 Format: PASS password
 
 ### Empty authorisation file
+hen the authorisation file is empty, the user still needs to enter a user-id. It can be anything as long as there is no spaces or hashtags.
 ```
 Connected to localhost via port number 9999
 +SFTP RFC913 Server Activated :)
