@@ -440,6 +440,9 @@ Requests that the remote system then uses the SEND to send the specified file.
 Not permitted: making requests for files in the /client folder.
 SEND or STP command follows the RETR to tell the remote host the client wishes to continue with the request, and to send the file/stop the RETR process.
 If a file already exists in the /client folder with the same name, it will be overwritten.
+
+This function assumes the correct TYPE command has been entered before starting. If sending a binary formatted file for example, PNG files, need to send: ```TYPE B``` or ```TYPE C``` first. For text or ASCII formatted files send: ```TYPE A```.
+
 Format: RETR file-spec
 ### Example
 ```
@@ -504,6 +507,8 @@ Tells the remote system to receive the following file and save it under that nam
 Format: { NEW | OLD | APP } file-spec
 "NEW" means a new file should be generated, "OLD" means it should overwrite the current file, and "APP" is that it should append the existing file.
 
+This function assumes the correct TYPE command has been entered before starting. If sending a binary formatted file for example, PNG files, need to send: ```TYPE B``` or ```TYPE C``` first. For text or ASCII formatted files send: ```TYPE A```.
+
 ### NEW Example
 The example shows a typical use case, and also how it shall rename the transfer file if a file already exists with that name
 ```
@@ -565,7 +570,7 @@ Sending...
 ```
 
 ### APP Example
-This example continue on from the previous one (OLD), so the final txt.txt size is 50 bytes.
+This example continues on from the previous one (OLD), so the final txt.txt size is 50 bytes.
 i.e. 19 bytes overwritten by 25 butes, then appended by another 25 bytes = 50 bytes.
 ```
 > STOR APP txt.txt 
