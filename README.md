@@ -673,4 +673,33 @@ ERROR: File txt1.txt does not exist in pathing: C:\root\725-sftp\client
 ```
 This is an output from the client, not the remote host
 
+### Cannot Retrieve from server/ftFolder Folder Example
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER        
+!JUSTUSER logged in
+> CDIR server/ftFolder
+!Changed working directory to /server/ftFolder
+> STOR NEW Capture.PNG
+-Invalid directory, this is the destination folder, any file you're requesting from here is already there
+```
+
+### Conflicting Input File and Send Types Example
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER JUSTUSER        
+!JUSTUSER logged in
+> CDIR client
+!Changed working directory to /client
+> TYPE A
++Using Ascii mode
+> STOR NEW Capture.PNG
+ERROR: conflicting send type and input file type. Send type is A and file type is B or C
+> CDIR server
+!Changed working directory to /server
+> SEND 
+ERROR: need valid RETR command before SEND can be used
+```
 

@@ -499,6 +499,25 @@ public class Client {
             System.out.println("ERROR: Invalid argument input. Must have 3 arguments, STOR { NEW | OLD | APP } file-spec");
         }
 
+        File fib;
+        if(("\\").equals(spec.substring(0,1)) || ("/").equals(spec.substring(0,1))){
+            fib = new File(activeDir + spec);
+        }
+        else{
+            fib = new File(activeDir + "\\" + spec);
+        }
+        
+        try{
+            boolean fileTypeIsBinary = isBinaryFile(fib.getAbsolutePath());
+            if((!fileTypeIsBinary && (sendType.equals("b") || sendType.equals("c"))) || (fileTypeIsBinary && (sendType.equals("a")))){
+                System.out.println("ERROR: conflicting send type and input file type. Send type is " + sendType.toUpperCase() + (fileTypeIsBinary ? " and file type is B or C" : " and file type is a"));
+                return;
+            }
+        }
+        catch (IOException e){
+            System.out.println("ERROR: IO Exception occurred");
+        }
+
         // validating file, case sensitive
         boolean exists = false;
         File f = new File(activeDir);
