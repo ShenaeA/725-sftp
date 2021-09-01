@@ -3,6 +3,8 @@ import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Date;
 
 
@@ -10,7 +12,7 @@ public class Client {
     static String[] validCommands;
     private static File clientFolderFile = new File(System.getProperty("user.dir"));
 	private static final String rootDir = (clientFolderFile.getParentFile()).getAbsolutePath();
-	static String activeDir = rootDir;
+	static String activeDir = "\\";
     static String HOSTNAME = "localhost";
     static int PORT_NUMBER = 9999;
     static Socket socket;
@@ -351,6 +353,26 @@ public class Client {
                     spec += args[i] + " ";
                 }
             }
+
+            File f;
+            if(("\\").equals(spec.substring(0,1)) || ("/").equals(spec.substring(0,1))){
+                f = new File(rootDir + activeDir + spec);
+            }
+            else{
+                f = new File(rootDir + activeDir + "\\" + spec);
+            }
+            
+            try{
+                boolean fileTypeIsBinary = isBinaryFile(f.getAbsolutePath());
+                if((!fileTypeIsBinary && (sendType.equals("b") || sendType.equals("c"))) || (fileTypeIsBinary && (sendType.equals("a")))){
+                    System.out.println("ERROR: conflicting send type and input file type. Send type is " + sendType.toUpperCase() + (fileTypeIsBinary ? " and file type is b/c" : " and file type is a"));
+                    return;
+                }
+            }
+            catch (IOException e){
+                System.out.println("ERROR: IO Exception occurred");
+            }
+
             sendToServer(args[0] + " " + spec);
             String response  = responseFromServer();
             System.out.println(response);
@@ -558,6 +580,23 @@ public class Client {
             }
         }
         
+    }
+
+    /*
+     * Helper function to detrrmine if an input file is binary or not 
+     */
+    public static boolean isBinaryFile(String s) throws IOException {
+        File f = new File(s);
+        String type = Files.probeContentType(Paths.get(s));
+        if (type == null) {
+            //type couldn't be determined, assume binary
+            return true;
+        } else if (type.startsWith("text")) {
+            return false;
+        } else {
+            //type isn't text
+            return true;
+        }
     }
 
     /* 
