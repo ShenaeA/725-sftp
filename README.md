@@ -505,7 +505,7 @@ Connected to localhost via port number 9999
 ```
 
 ### Permission Example
-The JUSTCCT user doesn't have permission as per the .restrict file within /folder
+The JUSTACCT user doesn't have permission as per the .restrict file within /folder
 ```
 Connected to localhost via port number 9999
 +SFTP RFC913 Server Activated :)
