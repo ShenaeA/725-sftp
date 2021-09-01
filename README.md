@@ -290,7 +290,7 @@ folder
 
 ## CDIR Command
 The CDIR function will change the current working directory on the remote host to the argument passed.
-
+To get to the root folder use ```CDIR /```.
 Format: CDIR new-directory
 
 ### Example
@@ -319,8 +319,17 @@ JUSTUSER##
 ```
 
 ```
-
-
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER TWOACCT
++TWOACCT valid, send account
+> ACCT ACCT1
+! Account valid, logged-in
+> CDIR server/sft/new folder/folder
++Directory ok, send account
+> ACCT ACCT1
+-Account exists but does not have permissions to enter this directory. Aced to ACCT1 and current directory is C:root\725-sftp
+```
 ## KILL Command
 The KILL command deletes a file from the current working directory.
 Format: KILL file-spec
