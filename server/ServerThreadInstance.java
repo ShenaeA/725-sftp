@@ -47,7 +47,7 @@ public class ServerThreadInstance extends Thread{
 	
 	private static File serverFolderFile = new File(System.getProperty("user.dir"));
 	private static final String rootDir = (serverFolderFile.getParentFile()).getAbsolutePath();
-	String activeDir = rootDir;
+	String activeDir = "\\";
 	static String ftFolder = rootDir + "\\server\\ftFolder";
 	String storDir = ftFolder;
 	 
@@ -501,8 +501,8 @@ public class ServerThreadInstance extends Thread{
 						responseFromClient = commandFromClient().split(" "); 
 					}
 					if(authoriser.acctCDIR(responseFromClient[1])){ // account was changed
-						if(restricted(dir) == 1){
-							response = "!Changed working directory to " + dir;
+						if(restricted(rootDir + dir) == 1){
+							response = "+Account valid, account changed to " + authoriser.getAccount() + "\r\n" + "!Changed working directory to " + dir;
 							break;
 						}
 					}
@@ -931,13 +931,19 @@ public class ServerThreadInstance extends Thread{
 			Long abortTime = new Date().getTime() + numOfBytes; // i.e. 1 millisecond per byte timeout
 			if(sendType.equals("a")){ // ASCII
 				BufferedOutputStream fileReceive = new BufferedOutputStream(new FileOutputStream(receiveFile, storType.equals("APP")));
+				Long d = (long) 0.0;
 				for(int i = 0; i < numOfBytes; i++){
-					if(new Date().getTime() > abortTime){
+					d = new Date().getTime();
+					if(d > abortTime){
 						sendToClient("-Couldn't save because time limit for file transfer reached. Timed out after " + numOfBytes + " milliseconds.");
 						fileReceive.close();
 						return;
 					}
 					fileReceive.write(aInFromClient.read());
+					
+				}
+				if(Server.seeSysOutput){
+					System.out.println("Time out value is: " + numOfBytes + " milliseconds, and sending took " +  (abortTime-d) + " milliseconds");
 				}
 				storFlag = false;
 				fileReceive.flush();
@@ -950,15 +956,20 @@ public class ServerThreadInstance extends Thread{
 				byte[] fileInBytes = new byte[(int) numOfBytes];
 				int idx = 0;
 				int s;
+				Long d = (long) 0.0;
 				while(idx < numOfBytes){
+					d = new Date().getTime();
 					s = bInFromClient.read(fileInBytes);
-					if(new Date().getTime() > abortTime){
+					if(d > abortTime){
 						sendToClient("-Couldn't save because time limit for file transfer reached. Timed out after " + numOfBytes + " milliseconds.");
 						fileReceive.close();
 						return;
 					}
 					fileReceive.write(fileInBytes, 0, s);
 					idx+=s;
+				}
+				if(Server.seeSysOutput){
+					System.out.println("Time out value is: " + numOfBytes + " milliseconds, and sending took " +  (abortTime-d) + " milliseconds");
 				}
 				storFlag = false;
 				fileReceive.flush();

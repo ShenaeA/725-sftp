@@ -360,6 +360,9 @@ public class Client {
                 retrFileName = spec;
                 System.out.println("Input either a SEND to receive file or STOP command to stop receiving process");
             }
+            else{
+                retrFlag = false;
+            }
         }
         else{
             System.out.println("ERROR: Invalid argument input. 1 argument allowed for file spec");
@@ -374,7 +377,10 @@ public class Client {
      * A second half of the RETR function/process to request a file be sent to root/client
      */
     public static void send(String[] args){
-        if(args.length == 1 && args[0].equals("SEND")){ // i.e. RETR new-file-spec, has a minimum of 2 arguments
+        if(!retrFlag){
+            System.out.println("ERROR: need valid RETR command before SEND can be used");
+        }
+        else if(args.length == 1 && args[0].equals("SEND") && retrFlag){ // i.e. RETR new-file-spec, has a minimum of 2 arguments
             sendToServer("SEND "); // needs space
 
             try{
@@ -420,10 +426,10 @@ public class Client {
                 System.out.println("ERROR: client folder (saving location) doesn't exist");
             }
             catch(SocketException g){
-                System.out.println("Server connection closed prematurely, file did not finish transferring.");
+                System.out.println("ERROR: Server connection closed prematurely, file did not finish transferring.");
             }
             catch(Exception h){
-                System.out.println("-Something went wrong. Check file still exists");;
+                System.out.println("ERROR: Something went wrong. Check file still exists");;
             }
         }
         else{

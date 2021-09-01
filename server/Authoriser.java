@@ -215,6 +215,10 @@ public class Authoriser {
 		return validUser && validAcct && validPass;
 	}
 
+	public String getAccount(){
+		return account;
+	}
+
 	/* 
 	 * ACCT CMD for CDIR
 	 * assumes a current valid user command active in remote system 

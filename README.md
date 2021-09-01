@@ -290,6 +290,7 @@ folder
 
 ## CDIR Command
 The CDIR function will change the current working directory on the remote host to the argument passed.
+
 Format: CDIR new-directory
 
 ### Example
@@ -307,6 +308,18 @@ Connected to localhost via port number 9999
 > CDIR /directory doesnt exist
 -Can't connect to directory because: input is not a valid directory
 ```
+
+### Permissions Example
+The "+directory ok, send account/password" response will only occur if the directory being accessed is restricted.
+
+For the example .restrict file contents are:
+```
+TWOACCT#ACCT2#
+JUSTUSER##
+```
+
+```
+
 
 ## KILL Command
 The KILL command deletes a file from the current working directory.
@@ -500,6 +513,24 @@ Input either a SEND to receive file or STOP command to stop receiving process
 -Something went wrong. Check file still exists
 > LIST F
 ERROR: Cannot send command. Connection to server closed.
+```
+
+### SEND usage Error Case
+```
+Connected to localhost via port number 9999
++SFTP RFC913 Server Activated :)
+> USER TWOACCT 
++TWOACCT valid, send account
+> ACCT ACCT1
+! Account valid, logged-in
+> TYPE A       
++Using Ascii mode
+> RETR txt.txt     
+9
+Input either a SEND to receive file or STOP command to stop receiving process
+> SEND
+> SEND
+ERROR: need valid RETR command before SEND can be used
 ```
 
 ## STOR Command
