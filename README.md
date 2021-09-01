@@ -28,7 +28,7 @@ The folder structure and naming of 725-sftp, client and server must not be renam
 Preface: make sure the authorisation file is set-up first. The default file will work, however, if you desire different users/accounts/passwords, then you'll need to edit as per the "[Authorisation.txt](#authorisation-file)" file instructions.
 
 To run the Server (Command Prompt or PowerShell):
-1. Open ../725-sftp/server and compile using "javac *.java" 
+1. Open command prompt and navigate to ../725-sftp/server and compile using "javac *.java" 
 2. Run with "java Server \[authorisation file name]"
    a. the default name of the authorisation file is Authorisation.txt
    b. if you've changed the file name then use that name instead
@@ -38,7 +38,7 @@ To run the Server (Command Prompt or PowerShell):
 Preface: this is the client used to gain access to the remote host/SFTP server. Currently the default port the client is connected to is port 9999, using "localhost' as the IP. If the connection isn't made there will be a response "Connection not made. Server may be inactive.", so make sure the server is running first. The client must be stored in the /client folder, as that is also where the storing of file transfers to client goes.  
 
 To run the Client:
-1. Navigate to ../725-sftp/client and compile using "javac *.java"
+1. Open command prompt and navigate to ../725-sftp/client and compile using "javac *.java"
 2. Run with "java Client"
 
 ## Authorisation File
@@ -68,7 +68,7 @@ e.g. USER#ACCT,ACCT2#PASSWORD or USER##PASSWORD or USER#ACCT#
 Account and password info for a given user must match the contents of the Authorisation file, i.e. if a user X has password Y in Authorisation.txt, then if a password is specified in .restrict, it must be Y. Same principle for any specified account info.
 
 # Command Guide and Example Test or Use Cases
-The client receive responses from the server beginning with either a !, + or -.
+The client receive responses from the server beginning with either a ! + or -.
 The '>' indicates where the client has made an input. 
 
 ## USER, ACCT and PASS Commands
